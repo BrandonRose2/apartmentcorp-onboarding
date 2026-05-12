@@ -3,18 +3,20 @@
  * Design: Warm Professional (Cream bg, Navy headers, Terracotta accents)
  * Layout: Two-column desktop (sticky left nav + main content), single column mobile
  * Typography: Playfair Display (headings) + Source Sans 3 (body)
+ * Tabs: Onboarding Checklist | Document Hub | Company Websites & Logins
  */
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { ChecklistTab } from "@/components/ChecklistTab";
 import { DocumentHubTab } from "@/components/DocumentHubTab";
+import { CompanyWebsitesTab } from "@/components/CompanyWebsitesTab";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { PhaseNavigator } from "@/components/PhaseNavigator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { PHASES } from "@/lib/onboardingData";
-import { Building2, CheckSquare, FolderOpen, RotateCcw, Save } from "lucide-react";
+import { Building2, CheckSquare, FolderOpen, Globe, RotateCcw, Save } from "lucide-react";
 
-type ActiveTab = "checklist" | "documents";
+type ActiveTab = "checklist" | "documents" | "websites";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("checklist");
@@ -31,6 +33,25 @@ export default function Home() {
       setTimeout(() => setShowResetConfirm(false), 3000);
     }
   };
+
+  const tabs: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: number }[] = [
+    {
+      id: "checklist",
+      label: "Onboarding Checklist",
+      icon: <CheckSquare className="w-4 h-4" />,
+    },
+    {
+      id: "documents",
+      label: "Document Hub",
+      icon: <FolderOpen className="w-4 h-4" />,
+      badge: onboarding.totalFiles > 0 ? onboarding.totalFiles : undefined,
+    },
+    {
+      id: "websites",
+      label: "Company Websites & Logins",
+      icon: <Globe className="w-4 h-4" />,
+    },
+  ];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.98 0.01 80)" }}>
@@ -49,7 +70,10 @@ export default function Home() {
               <Building2 className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
-              <div className="text-white font-semibold text-sm leading-tight truncate" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+              <div
+                className="text-white font-semibold text-sm leading-tight truncate"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+              >
                 ApartmentCorp
               </div>
               <div className="text-xs leading-tight" style={{ color: "oklch(0.75 0.03 250)" }}>
@@ -61,13 +85,19 @@ export default function Home() {
           {/* Overall Progress */}
           <div className="hidden sm:flex items-center gap-3 flex-1 max-w-xs">
             <div className="flex-1">
-              <div className="flex justify-between text-xs mb-1" style={{ color: "oklch(0.80 0.03 250)" }}>
+              <div
+                className="flex justify-between text-xs mb-1"
+                style={{ color: "oklch(0.80 0.03 250)" }}
+              >
                 <span>Overall Progress</span>
                 <span className="font-semibold text-white">
                   {onboarding.overallProgress}% ({onboarding.completedTasks}/{onboarding.totalTasks})
                 </span>
               </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "oklch(0.30 0.07 250)" }}>
+              <div
+                className="h-1.5 rounded-full overflow-hidden"
+                style={{ backgroundColor: "oklch(0.30 0.07 250)" }}
+              >
                 <div
                   className="h-full rounded-full progress-segment"
                   style={{
@@ -81,7 +111,10 @@ export default function Home() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <span className="hidden md:flex items-center gap-1 text-xs" style={{ color: "oklch(0.65 0.03 250)" }}>
+            <span
+              className="hidden md:flex items-center gap-1 text-xs"
+              style={{ color: "oklch(0.65 0.03 250)" }}
+            >
               <Save className="w-3 h-3" />
               Saved {onboarding.formatLastSaved()}
             </span>
@@ -89,7 +122,9 @@ export default function Home() {
               onClick={handleReset}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all"
               style={{
-                backgroundColor: showResetConfirm ? "oklch(0.577 0.245 27.325)" : "oklch(0.30 0.07 250)",
+                backgroundColor: showResetConfirm
+                  ? "oklch(0.577 0.245 27.325)"
+                  : "oklch(0.30 0.07 250)",
                 color: "white",
               }}
             >
@@ -118,44 +153,42 @@ export default function Home() {
         style={{ top: "56px", backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.02 80)" }}
       >
         <div className="container">
-          <div className="flex gap-0">
-            <button
-              onClick={() => setActiveTab("checklist")}
-              className="flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all"
-              style={{
-                borderBottomColor: activeTab === "checklist" ? "oklch(0.55 0.14 40)" : "transparent",
-                color: activeTab === "checklist" ? "oklch(0.55 0.14 40)" : "oklch(0.50 0.03 250)",
-              }}
-            >
-              <CheckSquare className="w-4 h-4" />
-              Onboarding Checklist
-            </button>
-            <button
-              onClick={() => setActiveTab("documents")}
-              className="flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all"
-              style={{
-                borderBottomColor: activeTab === "documents" ? "oklch(0.55 0.14 40)" : "transparent",
-                color: activeTab === "documents" ? "oklch(0.55 0.14 40)" : "oklch(0.50 0.03 250)",
-              }}
-            >
-              <FolderOpen className="w-4 h-4" />
-              Document Hub
-              {onboarding.totalFiles > 0 && (
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                  style={{ backgroundColor: "oklch(0.55 0.14 40)", color: "white" }}
+          <div className="flex gap-0 overflow-x-auto scrollbar-none">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="flex items-center gap-2 px-4 sm:px-5 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap flex-shrink-0"
+                  style={{
+                    borderBottomColor: isActive ? "oklch(0.55 0.14 40)" : "transparent",
+                    color: isActive ? "oklch(0.55 0.14 40)" : "oklch(0.50 0.03 250)",
+                  }}
                 >
-                  {onboarding.totalFiles}
-                </span>
-              )}
-            </button>
+                  {tab.icon}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">
+                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : "Websites"}
+                  </span>
+                  {tab.badge !== undefined && (
+                    <span
+                      className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                      style={{ backgroundColor: "oklch(0.55 0.14 40)", color: "white" }}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="container py-6">
-        {activeTab === "checklist" ? (
+        {activeTab === "checklist" && (
           <div className="flex gap-6 items-start">
             {/* Left: Phase Navigator (sticky) */}
             <aside className="hidden lg:block w-64 flex-shrink-0 sticky top-32">
@@ -180,7 +213,9 @@ export default function Home() {
               />
             </main>
           </div>
-        ) : (
+        )}
+
+        {activeTab === "documents" && (
           <DocumentHubTab
             uploadedFiles={onboarding.state.uploadedFiles}
             onAddFile={onboarding.addFile}
@@ -189,11 +224,16 @@ export default function Home() {
             categoriesFiled={onboarding.categoriesFiled}
           />
         )}
+
+        {activeTab === "websites" && <CompanyWebsitesTab />}
       </div>
 
       {/* Footer */}
       <footer className="border-t mt-12 py-4" style={{ borderColor: "oklch(0.88 0.02 80)" }}>
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-2 text-xs" style={{ color: "oklch(0.55 0.03 250)" }}>
+        <div
+          className="container flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
+          style={{ color: "oklch(0.55 0.03 250)" }}
+        >
           <span>© {new Date().getFullYear()} ApartmentCorp — New Hire Onboarding Portal</span>
           <span className="flex items-center gap-1">
             <Save className="w-3 h-3" />
