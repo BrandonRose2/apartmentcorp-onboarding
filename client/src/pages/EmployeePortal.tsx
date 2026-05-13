@@ -295,7 +295,7 @@ function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSub
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ minHeight: 280 }}>
         <img
-          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663449376037/PxSj4NVMpo7Dbkx2svgNws/employee-welcome-hero-cBsiv47HZoXYM9Kk9nnLWB.webp"
+          src="/manus-storage/city-skyline_be9337ce.jpg"
           alt="ApartmentCorp community"
           className="w-full h-72 object-cover"
           style={{ filter: "brightness(0.45)" }}
