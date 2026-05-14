@@ -14,10 +14,11 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { PhaseNavigator } from "@/components/PhaseNavigator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { PHASES } from "@/lib/onboardingData";
-import { Building2, BookOpen, CheckSquare, FolderOpen, Globe, RotateCcw, Save } from "lucide-react";
+import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save } from "lucide-react";
 import { UsefulResourcesTab } from "@/components/UsefulResourcesTab";
+import { RemindersTab } from "@/components/RemindersTab";
 
-type ActiveTab = "checklist" | "documents" | "websites" | "resources";
+type ActiveTab = "checklist" | "documents" | "websites" | "resources" | "reminders";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("checklist");
@@ -56,6 +57,11 @@ export default function Home() {
       id: "resources",
       label: "Useful Resources",
       icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      id: "reminders",
+      label: "Reminders",
+      icon: <Bell className="w-4 h-4" />,
     },
   ];
 
@@ -175,7 +181,7 @@ export default function Home() {
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">
-                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : "Resources"}
+                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : tab.id === "resources" ? "Resources" : "Reminders"}
                   </span>
                   {tab.badge !== undefined && (
                     <span
@@ -233,6 +239,7 @@ export default function Home() {
 
         {activeTab === "websites" && <CompanyWebsitesTab />}
         {activeTab === "resources" && <UsefulResourcesTab />}
+        {activeTab === "reminders" && <RemindersTab />}
       </div>
 
       {/* Footer */}
