@@ -39,6 +39,22 @@ export const WEBSITE_CATEGORIES: WebsiteCategory[] = [
 export const COMPANY_WEBSITES: CompanyWebsite[] = [
   // ── Property Management ──────────────────────────────────────────────────
   {
+    id: "propertymax",
+    name: "PropertyMAX.ai",
+    url: "https://propertymax.ai/app/",
+    icon: "🤖",
+    category: "property-mgmt",
+    description: "ApartmentCorp's AI-powered property management platform. Your primary tool for leasing, operations, and resident management.",
+    loginInstructions: "Navigate to the PropertyMAX.ai app and sign in with your ApartmentCorp credentials. Your account will be provisioned by IT on Day 1.",
+    fields: [
+      { label: "App URL", value: "https://propertymax.ai/app/" },
+      { label: "Username", value: "Your company email (firstname.lastname@apartmentcorp.com)" },
+      { label: "Password", value: "Provided by IT on Day 1", sensitive: true },
+    ],
+    notes: "PropertyMAX.ai is ApartmentCorp's own platform — built in-house to streamline property operations with AI. Complete the onboarding walkthrough on first login.",
+    accessLevel: "All Staff",
+  },
+  {
     id: "yardi",
     name: "Yardi Voyager",
     url: "https://www.yardi.com",

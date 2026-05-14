@@ -14,9 +14,10 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { PhaseNavigator } from "@/components/PhaseNavigator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { PHASES } from "@/lib/onboardingData";
-import { Building2, CheckSquare, FolderOpen, Globe, RotateCcw, Save } from "lucide-react";
+import { Building2, BookOpen, CheckSquare, FolderOpen, Globe, RotateCcw, Save } from "lucide-react";
+import { UsefulResourcesTab } from "@/components/UsefulResourcesTab";
 
-type ActiveTab = "checklist" | "documents" | "websites";
+type ActiveTab = "checklist" | "documents" | "websites" | "resources";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("checklist");
@@ -50,6 +51,11 @@ export default function Home() {
       id: "websites",
       label: "Company Websites & Logins",
       icon: <Globe className="w-4 h-4" />,
+    },
+    {
+      id: "resources",
+      label: "Useful Resources",
+      icon: <BookOpen className="w-4 h-4" />,
     },
   ];
 
@@ -169,7 +175,7 @@ export default function Home() {
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">
-                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : "Websites"}
+                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : "Resources"}
                   </span>
                   {tab.badge !== undefined && (
                     <span
@@ -226,6 +232,7 @@ export default function Home() {
         )}
 
         {activeTab === "websites" && <CompanyWebsitesTab />}
+        {activeTab === "resources" && <UsefulResourcesTab />}
       </div>
 
       {/* Footer */}
