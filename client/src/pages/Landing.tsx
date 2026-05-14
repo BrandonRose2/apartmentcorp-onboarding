@@ -34,10 +34,10 @@ export default function Landing() {
       <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: AC.nav, borderColor: AC.border, backdropFilter: "blur(12px)" }}>
         <div className="max-w-5xl mx-auto px-6 flex items-center h-16">
           <img
-            src="/manus-storage/ac-logo_324ddb7c.webp"
+            src="/manus-storage/apartmentcorp-logo_f725102b.gif"
             alt="ApartmentCorp"
-            className="h-7 w-auto"
-            style={{ filter: "brightness(0) invert(1)" }}
+            className="h-8 w-auto object-contain"
+            style={{ maxWidth: "160px" }}
           />
         </div>
       </header>
@@ -55,9 +55,14 @@ export default function Landing() {
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
           >
-            {/* Teal accent line */}
-            <div className="flex justify-center mb-6">
-              <div className="w-12 h-0.5 rounded-full" style={{ backgroundColor: AC.teal }} />
+            {/* Animated Logo */}
+            <div className="flex justify-center mb-8">
+              <img
+                src="/manus-storage/apartmentcorp-logo_f725102b.gif"
+                alt="ApartmentCorp"
+                className="h-28 w-auto object-contain"
+                style={{ maxWidth: "380px" }}
+              />
             </div>
             <h1
               className="text-5xl sm:text-6xl font-semibold mb-4 leading-tight"
@@ -173,10 +178,10 @@ export default function Landing() {
       <footer className="border-t py-5" style={{ borderColor: AC.border }}>
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
           <img
-            src="/manus-storage/ac-logo_324ddb7c.webp"
+            src="/manus-storage/apartmentcorp-logo_f725102b.gif"
             alt="ApartmentCorp"
-            className="h-5 w-auto opacity-30"
-            style={{ filter: "brightness(0) invert(1)" }}
+            className="h-6 w-auto object-contain opacity-50"
+            style={{ maxWidth: "120px" }}
           />
           <p className="text-xs" style={{ color: "oklch(0.40 0.02 230)" }}>
             © {new Date().getFullYear()} ApartmentCorp. All rights reserved.

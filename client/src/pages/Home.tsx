@@ -82,6 +82,19 @@ export default function Home() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "oklch(0.98 0.01 80)" }}>
       {/* Top Header Bar */}
+      {/* Centered Logo Banner */}
+      <div
+        className="w-full flex justify-center items-center py-3"
+        style={{ backgroundColor: "oklch(0.13 0.06 258)" }}
+      >
+        <img
+          src="/manus-storage/apartmentcorp-logo_f725102b.gif"
+          alt="ApartmentCorp"
+          className="h-20 w-auto object-contain"
+          style={{ maxWidth: "340px" }}
+        />
+      </div>
+
       <header
         className="sticky top-0 z-50 border-b shadow-sm"
         style={{ backgroundColor: "oklch(0.22 0.06 250)", borderColor: "oklch(0.30 0.07 250)" }}
@@ -89,18 +102,12 @@ export default function Home() {
         <div className="container flex items-center justify-between h-14 gap-4">
           {/* Logo + Title */}
           <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="flex items-center justify-center w-8 h-8 rounded-md flex-shrink-0"
-              style={{ backgroundColor: "oklch(0.55 0.14 40)" }}
-            >
-              <Building2 className="w-4 h-4 text-white" />
-            </div>
             <div className="min-w-0">
               <div
                 className="text-white font-semibold text-sm leading-tight truncate"
                 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
-                ApartmentCorp
+                HR Admin Dashboard
               </div>
               <div className="text-xs leading-tight" style={{ color: "oklch(0.75 0.03 250)" }}>
                 New Hire Onboarding Portal

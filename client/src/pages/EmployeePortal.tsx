@@ -236,10 +236,10 @@ export default function EmployeePortal() {
       <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: AC.nav, borderColor: AC.border, backdropFilter: "blur(12px)" }}>
         <div className="max-w-4xl mx-auto px-6 flex items-center justify-between h-16">
           <img
-            src="/manus-storage/ac-logo_324ddb7c.webp"
+            src="/manus-storage/apartmentcorp-logo_f725102b.gif"
             alt="ApartmentCorp"
-            className="h-7 w-auto"
-            style={{ filter: "brightness(0) invert(1)" }}
+            className="h-8 w-auto object-contain"
+            style={{ maxWidth: "160px" }}
           />
           {currentScreen !== "welcome" && (
             <div className="flex items-center gap-4">
