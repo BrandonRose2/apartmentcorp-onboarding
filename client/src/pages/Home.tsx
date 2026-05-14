@@ -14,7 +14,7 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { PhaseNavigator } from "@/components/PhaseNavigator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { PHASES } from "@/lib/onboardingData";
-import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save, Monitor, MapPin } from "lucide-react";
+import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save, Monitor, MapPin, User, ChevronDown, X } from "lucide-react";
 import { UsefulResourcesTab } from "@/components/UsefulResourcesTab";
 import { RemindersTab } from "@/components/RemindersTab";
 import { TechOnboardingTab } from "@/components/TechOnboardingTab";
@@ -26,6 +26,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("checklist");
   const [activePhaseId, setActivePhaseId] = useState(PHASES[0].id);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showBrandonPanel, setShowBrandonPanel] = useState(false);
   const onboarding = useOnboardingState();
 
   const handleReset = () => {
@@ -160,9 +161,61 @@ export default function Home() {
               <RotateCcw className="w-3 h-3" />
               {showResetConfirm ? "Confirm Reset?" : "Reset All"}
             </button>
+
+            {/* Brandon Button */}
+            <button
+              onClick={() => setShowBrandonPanel(!showBrandonPanel)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all"
+              style={{
+                backgroundColor: showBrandonPanel ? "oklch(0.72 0.12 220)" : "oklch(0.55 0.14 40)",
+                color: "white",
+              }}
+            >
+              <User className="w-3.5 h-3.5" />
+              Brandon
+              <ChevronDown className={`w-3 h-3 transition-transform ${showBrandonPanel ? "rotate-180" : ""}`} />
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Brandon Panel — slides down from header */}
+      {showBrandonPanel && (
+        <div
+          className="border-b shadow-lg"
+          style={{
+            backgroundColor: "oklch(0.15 0.06 258)",
+            borderColor: "oklch(0.25 0.08 256)",
+          }}
+        >
+          <div className="container py-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: "oklch(0.55 0.14 40)" }}
+                >
+                  B
+                </div>
+                <div>
+                  <div className="text-white font-semibold text-sm" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                    Brandon's Workspace
+                  </div>
+                  <div className="text-xs" style={{ color: "oklch(0.72 0.12 220)" }}>Personal reminders &amp; notes</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBrandonPanel(false)}
+                className="p-1.5 rounded transition-all"
+                style={{ color: "oklch(0.65 0.05 250)" }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <RemindersTab />
+          </div>
+        </div>
+      )}
 
       {/* Welcome Banner */}
       <WelcomeBanner
