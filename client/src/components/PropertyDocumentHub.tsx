@@ -27,6 +27,8 @@ interface Property {
   units: number;
   type: string;
   note?: string;
+  address?: string;
+  badge?: string;
 }
 
 interface Region {
@@ -67,6 +69,7 @@ const REGIONS: Region[] = [
       { id: "grace-townhomes", name: "Grace Townhomes", units: 112, type: "Conventional" },
       { id: "grove-park", name: "Grove Park", units: 60, type: "Layered HUD / LIHTC" },
       { id: "la-promesa", name: "La Promesa", units: 136, type: "Layered HUD / LIHTC" },
+      { id: "crossroads-lee-summit", name: "Crossroads of Lee Summit", units: 160, type: "Section 8 / HUD", address: "NE Town Centre Blvd, Lee's Summit, MO", badge: "NEW" },
     ],
   },
   {
@@ -247,12 +250,19 @@ export function PropertyDocumentHub() {
                         >
                           <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: "oklch(0.72 0.12 220)" }} />
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold" style={{ color: "oklch(0.95 0.005 220)" }}>
-                              {property.name}
-                              <span className="ml-2 text-xs font-normal opacity-60">({property.units} units)</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold" style={{ color: "oklch(0.95 0.005 220)" }}>
+                                {property.name}
+                              </span>
+                              {property.badge && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide" style={{ backgroundColor: "oklch(0.55 0.14 40)", color: "white" }}>
+                                  {property.badge}
+                                </span>
+                              )}
+                              <span className="text-xs font-normal opacity-60" style={{ color: "oklch(0.95 0.005 220)" }}>({property.units} units)</span>
                             </div>
                             <div className="text-xs opacity-50" style={{ color: "oklch(0.72 0.12 220)" }}>
-                              {property.type}{property.note ? ` · ${property.note}` : ""}
+                              {property.type}{property.note ? ` · ${property.note}` : ""}{property.address ? ` · ${property.address}` : ""}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
