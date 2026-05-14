@@ -14,11 +14,12 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { PhaseNavigator } from "@/components/PhaseNavigator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { PHASES } from "@/lib/onboardingData";
-import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save } from "lucide-react";
+import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save, Monitor } from "lucide-react";
 import { UsefulResourcesTab } from "@/components/UsefulResourcesTab";
 import { RemindersTab } from "@/components/RemindersTab";
+import { TechOnboardingTab } from "@/components/TechOnboardingTab";
 
-type ActiveTab = "checklist" | "documents" | "websites" | "resources" | "reminders";
+type ActiveTab = "checklist" | "documents" | "websites" | "resources" | "reminders" | "tech";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("checklist");
@@ -36,7 +37,7 @@ export default function Home() {
     }
   };
 
-  const tabs: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: number }[] = [
+  const tabs: { id: ActiveTab; label: React.ReactNode; icon: React.ReactNode; badge?: number }[] = [
     {
       id: "checklist",
       label: "Onboarding Checklist",
@@ -62,6 +63,16 @@ export default function Home() {
       id: "reminders",
       label: "Reminders",
       icon: <Bell className="w-4 h-4" />,
+    },
+    {
+      id: "tech",
+      label: (
+        <span className="flex flex-col items-start leading-tight">
+          <span>Technology Onboarding</span>
+          <span className="text-[10px] font-normal opacity-60">Ethan Fowler</span>
+        </span>
+      ),
+      icon: <Monitor className="w-4 h-4" />,
     },
   ];
 
@@ -181,7 +192,7 @@ export default function Home() {
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">
-                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : tab.id === "resources" ? "Resources" : "Reminders"}
+                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : tab.id === "resources" ? "Resources" : tab.id === "reminders" ? "Reminders" : "Tech"}
                   </span>
                   {tab.badge !== undefined && (
                     <span
@@ -240,6 +251,7 @@ export default function Home() {
         {activeTab === "websites" && <CompanyWebsitesTab />}
         {activeTab === "resources" && <UsefulResourcesTab />}
         {activeTab === "reminders" && <RemindersTab />}
+        {activeTab === "tech" && <TechOnboardingTab />}
       </div>
 
       {/* Footer */}
