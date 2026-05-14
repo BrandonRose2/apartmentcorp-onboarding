@@ -107,6 +107,15 @@ const DEFAULT_REMINDERS: ReminderItem[] = [
     assignee: "Self",
     createdAt: Date.now(),
   },
+  {
+    id: "default-7",
+    text: "Review, verify & finalize all new hire fillable forms — ensure every applicable document is complete, accurate, and live in the employee onboarding portal",
+    note: "NEW HIRE FORMS CHECKLIST — verify each is built, fillable, auto-saving, PDF-exportable, and files to the correct ecosystem folder:\n\n☐ W-4 — Federal Employee's Withholding Certificate\n☐ State Tax Withholding Form (state-specific)\n☐ I-9 — Employment Eligibility Verification\n☐ Direct Deposit Authorization Form\n☐ Emergency Contact & Personal Information Form\n☐ Offer Letter Acknowledgment\n☐ Background Check Authorization\n☐ Employee Handbook Acknowledgment & Signature\n☐ Benefits Enrollment Form (health, dental, vision, 401k)\n☐ Drug & Alcohol Policy Acknowledgment\n☐ At-Will Employment Acknowledgment\n☐ Non-Disclosure Agreement (NDA)\n☐ Code of Conduct & Ethics Acknowledgment\n☐ Fair Housing Training Acknowledgment\n☐ OSHA / Safety Training Acknowledgment\n☐ Payroll Schedule & Pay Method Confirmation\n☐ IT Equipment & Acceptable Use Policy\n☐ Social Media Policy Acknowledgment\n\nEach form must have:\n✓ Auto-save every 30 seconds\n✓ Export to PDF button\n✓ File to Ecosystem Folder button (saves to 03 - Human Resources > 01 - New Hire Onboarding)\n✓ Completion confirmation notification",
+    done: false,
+    priority: "urgent",
+    assignee: "Self",
+    createdAt: Date.now() + 1000,
+  },
 ];
 
 function loadItems(): ReminderItem[] {
