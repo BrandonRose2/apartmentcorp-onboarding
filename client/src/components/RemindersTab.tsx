@@ -52,12 +52,76 @@ function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+const DEFAULT_REMINDERS: ReminderItem[] = [
+  {
+    id: "default-1",
+    text: "Design Ethan Fowler's Technology Onboarding admin flow — credential provisioning ecosystem",
+    note: "Full blueprint:\n\n1. BUILD: Ethan's fillable Technology Onboarding intake form (already started in the Technology Onboarding tab) — he fills in every login/credential for each new hire across all platforms.\n\n2. AUTO-POPULATE: Once Ethan marks a record complete, the new hire's Company Websites & Logins tab is automatically populated with their personal credentials.\n\n3. SHAREPOINT SYNC: All completed records auto-sync to a SharePoint file in the ApartmentCorp OneDrive as a permanent HR record — accessible to Ethan, Admin Staff, and the new hire via unique PIN #.\n\n4. SECURE ACCESS: New hire accesses their credential page via a unique PIN # — Ethan and Admin see all employees, new hire sees only their own.\n\n5. SEND ETHAN: Send Ethan a fillable form webpage of everything included in his onboarding process — the information he inputs will auto-populate the Company Websites & Logins tab once complete.\n\nNeeds: Microsoft 365 tenant domain, Ethan's admin email, SharePoint folder path.",
+    done: false,
+    priority: "urgent",
+    assignee: "Both COOs",
+    createdAt: Date.now() - 5 * 86400000,
+  },
+  {
+    id: "default-2",
+    text: "Collect current new hire forms (W-4, I-9, direct deposit, etc.) and build them as interactive fillable forms in the employee onboarding portal",
+    note: "Upload the actual current new hire paperwork to Manus and the forms will be converted into interactive, fillable chapters in the employee-facing onboarding portal. Replaces the placeholder 'forms coming soon' sections in Chapters 2–6 of the employee journey.",
+    done: false,
+    priority: "high",
+    assignee: "Self",
+    createdAt: Date.now() - 4 * 86400000,
+  },
+  {
+    id: "default-3",
+    text: "Build PropertyMAX.ai Training Videos & Modules section — a dedicated area to house all screen recording training videos",
+    note: "Create a Training Videos & Modules section in association with the training phase of the onboarding portal. This will be a library where screen recording videos made for PropertyMAX.ai can be uploaded and organized by topic/module. New hires can watch and mark videos as complete as part of their onboarding journey.",
+    done: false,
+    priority: "high",
+    assignee: "Self",
+    createdAt: Date.now() - 3 * 86400000,
+  },
+  {
+    id: "default-4",
+    text: "Revise and update the ApartmentCorp Employee Handbook",
+    note: "The Employee Handbook needs to be reviewed, revised, and updated to reflect current company policies, procedures, and culture. Once updated, upload to the portal so new hires can access and sign the acknowledgment digitally during onboarding.",
+    done: false,
+    priority: "high",
+    assignee: "Both COOs",
+    createdAt: Date.now() - 2 * 86400000,
+  },
+  {
+    id: "default-5",
+    text: "Create a browser bookmarks HTML file that new employees can download and import to instantly load all ApartmentCorp company bookmarks",
+    note: "Build a downloadable browser bookmarks file (.html) pre-loaded with all company website links (PropertyMAX.ai, OneSite, AppWork, Connecteam, Paychex, Yardi, etc.). New hire downloads the file, imports it into Chrome/Edge, and instantly has all company bookmarks organized in a folder. Add download link to the Useful Resources tab.",
+    done: false,
+    priority: "normal",
+    assignee: "Self",
+    createdAt: Date.now() - 1 * 86400000,
+  },
+  {
+    id: "default-6",
+    text: "Add UC Connect or ConnectUP phone app/website into the Communication & Collaboration section of the Technology Onboarding form",
+    note: "Research whether it is UC Connect or ConnectUP, confirm the correct login URL, and add it as a dedicated field in the Phone Portal or Communication section of Ethan's Technology Onboarding form. Also add to the Company Websites & Logins tab.",
+    done: false,
+    priority: "normal",
+    assignee: "Self",
+    createdAt: Date.now(),
+  },
+];
+
 function loadItems(): ReminderItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (raw) {
+      const parsed: ReminderItem[] = JSON.parse(raw);
+      // Merge: keep user items, add any default items not already present
+      const existingIds = new Set(parsed.map(i => i.id));
+      const missing = DEFAULT_REMINDERS.filter(d => !existingIds.has(d.id));
+      return missing.length > 0 ? [...missing, ...parsed] : parsed;
+    }
+    return DEFAULT_REMINDERS;
   } catch {
-    return [];
+    return DEFAULT_REMINDERS;
   }
 }
 

@@ -7,9 +7,10 @@
 
 import { useState, useEffect } from "react";
 import {
-  Monitor, User, Mail, Lock, Smartphone, Laptop, CreditCard,
+  Monitor, User, Mail, Smartphone, Laptop, CreditCard,
   Building2, ChevronDown, ChevronUp, Save, CheckCircle2,
-  Copy, Eye, EyeOff, RefreshCw, Printer, AlertCircle, Cpu
+  Copy, Eye, EyeOff, Printer, Cpu, Wrench, Users, ClipboardList,
+  Phone, BarChart3, DollarSign, RefreshCw, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,7 @@ interface EmployeeRecord {
 // ─── Section Definitions ──────────────────────────────────────────────────────
 
 const TECH_SECTIONS: TechSection[] = [
+  // ── 1. Employee Info ────────────────────────────────────────────────────────
   {
     id: "employee_info",
     title: "New Employee Information",
@@ -63,6 +65,7 @@ const TECH_SECTIONS: TechSection[] = [
       { key: "direct_supervisor", label: "Direct Supervisor", placeholder: "Manager Name", type: "text" },
     ],
   },
+  // ── 2. Company Email & M365 ─────────────────────────────────────────────────
   {
     id: "company_email",
     title: "Company Email & Microsoft 365",
@@ -77,52 +80,148 @@ const TECH_SECTIONS: TechSection[] = [
       { key: "onedrive_storage", label: "OneDrive Storage Quota", placeholder: "1 TB (default)", type: "text" },
     ],
   },
+  // ── 3. PropertyMAX.ai ───────────────────────────────────────────────────────
   {
     id: "propertymax",
-    title: "PropertyMAX.ai",
-    subtitle: "Main property management platform",
+    title: "PropertyMAX.ai — Hub",
+    subtitle: "Main AI-powered property management platform (propertymax.ai/app/)",
     icon: <Building2 className="w-5 h-5" />,
     color: "oklch(0.62 0.16 165)",
     fields: [
       { key: "pmax_username", label: "PropertyMAX Username / Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
-      { key: "pmax_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true },
-      { key: "pmax_role", label: "User Role in PropertyMAX", placeholder: "Leasing Agent", type: "select", options: ["Leasing Agent", "Maintenance Tech", "Property Manager", "Regional Manager", "Admin", "Read Only"] },
-      { key: "pmax_properties", label: "Properties Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Comma-separated list of property names" },
+      { key: "pmax_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true, hint: "Employee will be prompted to change on first login" },
+      { key: "pmax_role", label: "User Role", placeholder: "Leasing Agent", type: "select", options: ["Leasing Agent", "Maintenance Tech", "Property Manager", "Regional Manager", "Admin", "Read Only"] },
+      { key: "pmax_properties", label: "Properties / Buildings Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Comma-separated list of property names" },
+      { key: "pmax_building_override", label: "Default Building View", placeholder: "All Buildings", type: "text", hint: "Leave blank for All Buildings access" },
       { key: "pmax_login_url", label: "Login URL", placeholder: "https://propertymax.ai/app/", type: "text" },
     ],
   },
+  // ── 4. AppWork ──────────────────────────────────────────────────────────────
   {
-    id: "communication",
-    title: "Communication & Collaboration",
-    subtitle: "Slack, Teams, and internal messaging",
-    icon: <Smartphone className="w-5 h-5" />,
-    color: "oklch(0.65 0.18 300)",
+    id: "appwork",
+    title: "AppWork",
+    subtitle: "Maintenance work order & make-ready management (admin.appworkco.com)",
+    icon: <Wrench className="w-5 h-5" />,
+    color: "oklch(0.60 0.16 55)",
     fields: [
-      { key: "slack_email", label: "Slack Invite Email", placeholder: "jsmith@apartmentcorp.com", type: "email" },
-      { key: "slack_username", label: "Slack Display Name", placeholder: "Jane Smith", type: "text" },
-      { key: "slack_channels", label: "Slack Channels Added To", placeholder: "#general, #leasing-team, #announcements", type: "text", hint: "Comma-separated channel names" },
-      { key: "teams_account", label: "Microsoft Teams Account", placeholder: "jsmith@apartmentcorp.com", type: "email" },
-      { key: "zoom_account", label: "Zoom Account (if applicable)", placeholder: "jsmith@apartmentcorp.com", type: "email" },
+      { key: "appwork_email", label: "AppWork Login Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
+      { key: "appwork_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true },
+      { key: "appwork_role", label: "User Role", placeholder: "Technician", type: "select", options: ["Technician", "Lead Technician", "Property Manager", "Admin", "Read Only"], required: true, hint: "Technician role for maintenance staff; Admin for managers" },
+      { key: "appwork_properties", label: "Properties Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Users can only see work orders for assigned properties" },
+      { key: "appwork_mobile_app", label: "Mobile App Invited?", placeholder: "Yes — invite sent to email", type: "select", options: ["Yes — invite sent to email", "No — desktop only", "Pending"], hint: "Technicians use the AppWork Technician mobile app" },
+      { key: "appwork_login_url", label: "Admin Portal URL", placeholder: "https://admin.appworkco.com/", type: "text" },
     ],
   },
+  // ── 5. Connecteam ───────────────────────────────────────────────────────────
   {
-    id: "payroll_hr",
-    title: "Payroll & HR Systems",
-    subtitle: "Paylocity and benefits portal access",
-    icon: <CreditCard className="w-5 h-5" />,
+    id: "connecteam",
+    title: "Connecteam",
+    subtitle: "Employee scheduling, time tracking & team communication (app.connecteam.com)",
+    icon: <Users className="w-5 h-5" />,
+    color: "oklch(0.62 0.18 280)",
+    fields: [
+      { key: "connecteam_invite_email", label: "Invite Email Sent To", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true, hint: "Connecteam sends an invite link to this email" },
+      { key: "connecteam_role", label: "User Role", placeholder: "Employee", type: "select", options: ["Employee", "Manager", "Admin", "Owner"], required: true },
+      { key: "connecteam_job_title", label: "Job Title in Connecteam", placeholder: "Leasing Agent", type: "text" },
+      { key: "connecteam_smart_groups", label: "Smart Groups / Teams Added To", placeholder: "Leasing Team, All Staff", type: "text", hint: "Comma-separated group names" },
+      { key: "connecteam_time_clock", label: "Time Clock Enabled?", placeholder: "Yes", type: "select", options: ["Yes", "No"] },
+      { key: "connecteam_scheduling", label: "Scheduling Access?", placeholder: "View Only", type: "select", options: ["View Own Schedule", "View & Edit Team", "No Access"] },
+      { key: "connecteam_login_url", label: "Login URL", placeholder: "https://app.connecteam.com/", type: "text" },
+    ],
+  },
+  // ── 6. Inspections ──────────────────────────────────────────────────────────
+  {
+    id: "inspections",
+    title: "Inspections",
+    subtitle: "Property inspection & unit condition reporting platform",
+    icon: <ClipboardList className="w-5 h-5" />,
+    color: "oklch(0.60 0.15 160)",
+    fields: [
+      { key: "inspect_email", label: "Login Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
+      { key: "inspect_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password" },
+      { key: "inspect_role", label: "User Role", placeholder: "Inspector", type: "select", options: ["Inspector", "Property Manager", "Regional Manager", "Admin", "Read Only"], required: true, hint: "Property Manager role can complete inspections for assigned properties" },
+      { key: "inspect_properties", label: "Properties Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Users can only inspect their assigned properties" },
+      { key: "inspect_templates", label: "Inspection Templates Assigned", placeholder: "Move-In, Move-Out, Annual", type: "text", hint: "Comma-separated template names" },
+      { key: "inspect_mobile_app", label: "Mobile App Access?", placeholder: "Yes", type: "select", options: ["Yes — invite sent", "No — web only", "Pending"] },
+      { key: "inspect_login_url", label: "Login URL", placeholder: "https://app.propertyinspect.com/", type: "text" },
+    ],
+  },
+  // ── 7. OneSite (RealPage) ───────────────────────────────────────────────────
+  {
+    id: "onesite",
+    title: "OneSite (RealPage)",
+    subtitle: "RealPage OneSite leasing, rents & resident management platform",
+    icon: <BarChart3 className="w-5 h-5" />,
+    color: "oklch(0.58 0.16 240)",
+    fields: [
+      { key: "onesite_username", label: "OneSite Username", placeholder: "jsmith", type: "text", required: true },
+      { key: "onesite_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true, hint: "User must change password on first login" },
+      { key: "onesite_role", label: "User Role / Security Profile", placeholder: "Leasing Agent", type: "select", options: ["Leasing Agent", "Leasing Manager", "Property Manager", "Regional Manager", "Accounting", "Superuser", "Read Only"], required: true, hint: "Superuser role required to grant New OneSite Experience access" },
+      { key: "onesite_properties", label: "Properties / Sites Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Users only see data for assigned properties" },
+      { key: "onesite_modules", label: "Modules Enabled", placeholder: "Leasing & Rents, Facilities", type: "text", hint: "e.g. Leasing & Rents, Facilities, Accounting, Screening" },
+      { key: "onesite_new_experience", label: "New OneSite Experience Enabled?", placeholder: "Yes", type: "select", options: ["Yes — custom role created", "No — classic view", "Pending"] },
+      { key: "onesite_login_url", label: "Login URL", placeholder: "https://onesite.realpage.com/", type: "text" },
+    ],
+  },
+  // ── 8. Paychex ──────────────────────────────────────────────────────────────
+  {
+    id: "paychex",
+    title: "Paychex",
+    subtitle: "Payroll, HR & benefits administration platform (paychexflex.com)",
+    icon: <DollarSign className="w-5 h-5" />,
     color: "oklch(0.60 0.16 40)",
     fields: [
-      { key: "paylocity_employee_id", label: "Paylocity Employee ID", placeholder: "EMP-00123", type: "text", required: true },
-      { key: "paylocity_username", label: "Paylocity Username / Email", placeholder: "jsmith@apartmentcorp.com", type: "email" },
-      { key: "paylocity_temp_password", label: "Paylocity Temp Password", placeholder: "TempPass2024!", type: "password" },
-      { key: "benefits_portal_url", label: "Benefits Portal URL", placeholder: "https://benefits.apartmentcorp.com", type: "text" },
-      { key: "benefits_login", label: "Benefits Portal Login", placeholder: "jsmith@apartmentcorp.com", type: "email" },
+      { key: "paychex_employee_id", label: "Paychex Employee ID", placeholder: "EMP-00123", type: "text", required: true },
+      { key: "paychex_username", label: "Paychex Flex Username", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
+      { key: "paychex_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", hint: "Employee will be prompted to reset on first login at paychexflex.com" },
+      { key: "paychex_role", label: "User Role", placeholder: "Employee", type: "select", options: ["Employee", "Manager — View Team", "Manager — Approve Time", "HR Admin", "Payroll Admin", "Super Admin"] },
+      { key: "paychex_pay_frequency", label: "Pay Frequency", placeholder: "Bi-Weekly", type: "select", options: ["Weekly", "Bi-Weekly", "Semi-Monthly", "Monthly"] },
+      { key: "paychex_direct_deposit", label: "Direct Deposit Set Up?", placeholder: "Pending", type: "select", options: ["Yes — confirmed", "Pending — form submitted", "No — paper check"] },
+      { key: "paychex_benefits_enrolled", label: "Benefits Enrollment Status", placeholder: "Pending", type: "select", options: ["Enrolled", "Pending enrollment", "Waived", "Not eligible yet"] },
+      { key: "paychex_login_url", label: "Login URL", placeholder: "https://www.paychexflex.com/", type: "text" },
     ],
   },
+  // ── 9. Phone Portal ─────────────────────────────────────────────────────────
+  {
+    id: "phone_portal",
+    title: "Phone Portal",
+    subtitle: "Business VoIP phone system — call management, voicemail & extensions",
+    icon: <Phone className="w-5 h-5" />,
+    color: "oklch(0.62 0.14 195)",
+    fields: [
+      { key: "phone_login_email", label: "Phone Portal Login Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
+      { key: "phone_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password" },
+      { key: "phone_extension", label: "Direct Extension Number", placeholder: "Ext. 209", type: "text", required: true },
+      { key: "phone_did", label: "Direct Inward Dial (DID) Number", placeholder: "(555) 123-4567", type: "tel", hint: "The direct phone number assigned to this employee, if applicable" },
+      { key: "phone_role", label: "User Role", placeholder: "User", type: "select", options: ["User", "Manager", "Admin", "Super Admin"] },
+      { key: "phone_call_queues", label: "Call Queues / Ring Groups Assigned", placeholder: "Main Office, Leasing Line", type: "text", hint: "Comma-separated queue names" },
+      { key: "phone_voicemail_setup", label: "Voicemail Set Up?", placeholder: "Yes", type: "select", options: ["Yes — greeting recorded", "Yes — default greeting", "Pending", "No"] },
+      { key: "phone_mobile_app", label: "Mobile App Installed?", placeholder: "Yes", type: "select", options: ["Yes — installed & logged in", "Pending", "No — desk phone only"] },
+      { key: "phone_login_url", label: "Portal Login URL", placeholder: "https://app.ringcentral.com/", type: "text" },
+    ],
+  },
+  // ── 10. Yardi ───────────────────────────────────────────────────────────────
+  {
+    id: "yardi",
+    title: "Yardi",
+    subtitle: "Yardi Voyager property management & accounting platform",
+    icon: <BarChart3 className="w-5 h-5" />,
+    color: "oklch(0.58 0.18 30)",
+    fields: [
+      { key: "yardi_username", label: "Yardi Username", placeholder: "jsmith", type: "text", required: true, hint: "Typically first initial + last name, e.g. jsmith" },
+      { key: "yardi_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true, hint: "Employee must change on first login" },
+      { key: "yardi_database", label: "Yardi Database / Environment", placeholder: "PROD", type: "select", options: ["PROD (Production)", "TEST (Training)", "STAGE (Staging)", "Both PROD & TEST"] },
+      { key: "yardi_security_role", label: "Security Role Assigned", placeholder: "Leasing Agent", type: "select", options: ["Leasing Agent", "Leasing Manager", "Property Manager", "Regional Manager", "Accounting Staff", "Accounting Manager", "Maintenance", "Executive", "Read Only", "Custom Role"] },
+      { key: "yardi_properties", label: "Properties / Property Groups Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Yardi supports explicit property lists or property group assignments" },
+      { key: "yardi_modules", label: "Modules / Menu Access Granted", placeholder: "Leasing, Residents, Reports", type: "text", hint: "e.g. Leasing, Residents, Maintenance, Accounting, Reports" },
+      { key: "yardi_login_url", label: "Yardi Login URL", placeholder: "https://www.yardiasp.com/", type: "text", hint: "Client-specific URL — confirm with IT" },
+    ],
+  },
+  // ── 11. IT Equipment & Access ────────────────────────────────────────────────
   {
     id: "it_equipment",
-    title: "IT Equipment & Access",
-    subtitle: "Hardware assigned and physical access credentials",
+    title: "IT Equipment & Physical Access",
+    subtitle: "Hardware assigned, badge access, VPN, and MFA enrollment",
     icon: <Laptop className="w-5 h-5" />,
     color: "oklch(0.55 0.12 130)",
     fields: [
@@ -136,18 +235,17 @@ const TECH_SECTIONS: TechSection[] = [
       { key: "mfa_method", label: "MFA Method Enrolled", placeholder: "Authenticator App", type: "select", options: ["Authenticator App", "SMS", "Email", "Hardware Key", "Not Yet Set Up"] },
     ],
   },
+  // ── 12. Additional Notes ─────────────────────────────────────────────────────
   {
     id: "additional_systems",
     title: "Additional Systems & Notes",
-    subtitle: "Any other platforms, logins, or special instructions",
+    subtitle: "Any other platforms, logins, or special instructions for this employee",
     icon: <Cpu className="w-5 h-5" />,
     color: "oklch(0.58 0.14 260)",
     fields: [
-      { key: "yardi_username", label: "Yardi Username (if applicable)", placeholder: "jsmith", type: "text" },
-      { key: "yardi_password", label: "Yardi Temp Password", placeholder: "TempPass2024!", type: "password" },
-      { key: "appfolio_username", label: "AppFolio Username (if applicable)", placeholder: "jsmith@apartmentcorp.com", type: "email" },
       { key: "other_system_1", label: "Other System 1 — Name & Login", placeholder: "System Name: username / password", type: "text" },
       { key: "other_system_2", label: "Other System 2 — Name & Login", placeholder: "System Name: username / password", type: "text" },
+      { key: "other_system_3", label: "Other System 3 — Name & Login", placeholder: "System Name: username / password", type: "text" },
       { key: "special_instructions", label: "Special Instructions / Notes for New Hire", placeholder: "Any additional setup steps, access notes, or reminders...", type: "text" },
       { key: "it_ticket_number", label: "IT Ticket / Reference Number", placeholder: "INC-20240001", type: "text" },
       { key: "completed_by", label: "Completed By (Ethan's confirmation)", placeholder: "Ethan Fowler", type: "text" },
