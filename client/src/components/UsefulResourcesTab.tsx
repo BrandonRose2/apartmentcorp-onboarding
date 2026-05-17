@@ -38,6 +38,14 @@ const RESOURCE_CATEGORIES: ResourceCategory[] = [
         tag: "Company",
       },
       {
+        id: "managers-contact-list",
+        title: "Manager's & Assistants Contact List",
+        description: "SharePoint spreadsheet with contact information for all property managers and assistants across ApartmentCorp.",
+        url: "https://aptrents-my.sharepoint.com/:x:/g/personal/brandon_apartmentcorp_com/IQChXb6JXGAnRoetV0_NkdENAS2POCBrM56TQyXHg427Ots?e=GW80mO",
+        icon: "📋",
+        tag: "SharePoint",
+      },
+      {
         id: "propertymax",
         title: "PropertyMAX.ai",
         description: "ApartmentCorp's AI-powered property management platform. Your primary day-to-day tool.",
@@ -178,6 +186,7 @@ const TAG_COLORS: Record<string, { bg: string; color: string }> = {
   Program:    { bg: "oklch(0.72 0.12 280 / 0.18)", color: "oklch(0.72 0.12 280)" },
   Investment: { bg: "oklch(0.75 0.12 80 / 0.18)",  color: "oklch(0.75 0.12 80)" },
   News:       { bg: "oklch(0.72 0.12 220 / 0.12)", color: "oklch(0.65 0.02 230)" },
+  SharePoint: { bg: "oklch(0.65 0.18 250 / 0.20)", color: "oklch(0.72 0.16 250)" },
 };
 
 const AC = {
