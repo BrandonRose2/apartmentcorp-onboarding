@@ -6,7 +6,7 @@
  * Tabs: Onboarding Checklist | Document Hub | Company Websites & Logins
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChecklistTab } from "@/components/ChecklistTab";
 import { DocumentHubTab } from "@/components/DocumentHubTab";
 import { CompanyWebsitesTab } from "@/components/CompanyWebsitesTab";
@@ -63,6 +63,24 @@ export default function Home() {
       }
     }
   };
+
+  // Keyboard support for Brandon passcode modal
+  useEffect(() => {
+    if (!showPasscodeModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) {
+        handleDigitPress(e.key);
+      } else if (e.key === "Backspace") {
+        setPasscode(p => p.slice(0, -1));
+      } else if (e.key === "Escape") {
+        setShowPasscodeModal(false);
+        setPasscode("");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showPasscodeModal, passcode]);
+
   const onboarding = useOnboardingState();
 
   const handleReset = () => {

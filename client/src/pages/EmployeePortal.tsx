@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, ChevronRight, Clock, HelpCircle, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { NewHireAuth } from "@/components/NewHireAuth";
 
 // ── Brand constants ───────────────────────────────────────────────────────────
 const AC = {
@@ -159,7 +160,7 @@ const CHAPTERS: Chapter[] = [
 ];
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function EmployeePortal() {
+function EmployeePortalContent() {
   const [employeeName, setEmployeeName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [currentScreen, setCurrentScreen] = useState<"welcome" | "chapters" | "form">("welcome");
@@ -734,5 +735,14 @@ function FormField({ field, value, onChange, accentColor }: {
           style={inputStyle} />
       )}
     </div>
+  );
+}
+
+// ── Auth-gated export ─────────────────────────────────────────────────────────
+export default function EmployeePortal() {
+  return (
+    <NewHireAuth>
+      <EmployeePortalContent />
+    </NewHireAuth>
   );
 }

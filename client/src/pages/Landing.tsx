@@ -8,7 +8,7 @@
 import { motion } from "framer-motion";
 import { ChevronRight, ClipboardList, UserCheck } from "lucide-react";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Brand constants
 const AC = {
@@ -55,6 +55,23 @@ export default function Landing() {
       setTimeout(() => setAdminError(false), 1500);
     }
   };
+
+  // Keyboard support for admin passcode modal
+  useEffect(() => {
+    if (!showAdminPasscode) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) {
+        handleAdminDigit(e.key);
+      } else if (e.key === "Backspace") {
+        setAdminCode(c => c.slice(0, -1));
+      } else if (e.key === "Escape") {
+        setShowAdminPasscode(false);
+        setAdminCode("");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showAdminPasscode, adminCode]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: AC.bg, fontFamily: AC.body, color: AC.fg }}>
