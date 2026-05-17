@@ -93,6 +93,7 @@ const RESOURCE_CATEGORIES: ResourceCategory[] = [
         id: "org-chart",
         title: "Company Org Chart",
         description: "See how the team is structured — departments, reporting lines, and key contacts.",
+        url: "https://aptrents-my.sharepoint.com/:x:/g/personal/brandon_apartmentcorp_com/IQChXb6JXGAnRoetV0_NkdENAS2POCBrM56TQyXHg427Ots?e=GW80mO&activeCell='Operations%2C%20Acctg%2C%20New%20York'!A1",
         icon: "🗂️",
         tag: "Team",
       },
