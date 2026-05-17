@@ -31,8 +31,8 @@ export default function Landing() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: AC.bg, fontFamily: AC.body, color: AC.fg }}>
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: AC.nav, borderColor: AC.border, backdropFilter: "blur(12px)" }}>
-        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between h-16">
+      <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: AC.nav, borderColor: AC.border, backdropFilter: "blur(12px)", overflow: "visible" }}>
+        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between" style={{ height: "80px" }}>
           <a
             href="https://apartmentcorp.com/"
             target="_blank"
@@ -40,26 +40,29 @@ export default function Landing() {
             className="flex items-center transition-opacity hover:opacity-80"
             title="Visit ApartmentCorp.com"
           >
-            <img
-              src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
-              alt="ApartmentCorp"
-              className="h-8 w-auto object-contain"
-              style={{ maxWidth: "160px" }}
-            />
+          <img
+            src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
+            alt="ApartmentCorp"
+            className="h-10 w-auto object-contain"
+            style={{ maxWidth: "180px" }}
+          />
           </a>
           <a
             href="https://propertymax.ai/app/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center transition-opacity hover:opacity-80"
+            className="flex items-center gap-2 transition-opacity hover:opacity-80"
             title="Open PropertyMAX.ai"
           >
             <img
-              src="/manus-storage/PropertyMaxShimmer_nobg_325c0b21.gif"
+              src="/manus-storage/PropertyMaxShimmer_5e119ab3_5fd51363.gif"
               alt="PropertyMAX.ai"
-              className="h-10 w-auto object-contain"
-              style={{ maxWidth: "120px" }}
+              className="object-contain flex-shrink-0"
+              style={{ width: "52px", height: "52px", objectFit: "contain" }}
             />
+            <span style={{ fontFamily: AC.body, fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em", color: "oklch(0.97 0.005 220)" }}>
+              PropertyMAX<span style={{ color: "oklch(0.72 0.22 210)", fontWeight: 400 }}>.ai</span>
+            </span>
           </a>
         </div>
       </header>
