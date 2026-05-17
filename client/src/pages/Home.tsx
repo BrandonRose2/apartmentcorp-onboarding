@@ -26,6 +26,43 @@ export default function Home() {
   const [activePhaseId, setActivePhaseId] = useState(PHASES[0].id);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showBrandonPanel, setShowBrandonPanel] = useState(false);
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+  const [passcode, setPasscode] = useState("");
+  const [passcodeError, setPasscodeError] = useState(false);
+
+  const handleBrandonClick = () => {
+    if (showBrandonPanel) {
+      setShowBrandonPanel(false);
+    } else {
+      setShowPasscodeModal(true);
+      setPasscode("");
+      setPasscodeError(false);
+    }
+  };
+
+  const handlePasscodeSubmit = (code?: string) => {
+    const check = code ?? passcode;
+    if (check === "3698") {
+      setShowPasscodeModal(false);
+      setShowBrandonPanel(true);
+      setPasscode("");
+      setPasscodeError(false);
+    } else {
+      setPasscodeError(true);
+      setPasscode("");
+      setTimeout(() => setPasscodeError(false), 1500);
+    }
+  };
+
+  const handleDigitPress = (digit: string) => {
+    if (passcode.length < 4) {
+      const next = passcode + digit;
+      setPasscode(next);
+      if (next.length === 4) {
+        setTimeout(() => handlePasscodeSubmit(next), 120);
+      }
+    }
+  };
   const onboarding = useOnboardingState();
 
   const handleReset = () => {
@@ -161,7 +198,7 @@ export default function Home() {
 
             {/* Brandon Button */}
             <button
-              onClick={() => setShowBrandonPanel(!showBrandonPanel)}
+              onClick={handleBrandonClick}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all"
               style={{
                 backgroundColor: showBrandonPanel ? "oklch(0.72 0.12 220)" : "oklch(0.55 0.14 40)",
@@ -308,6 +345,109 @@ export default function Home() {
         {activeTab === "resources" && <UsefulResourcesTab />}
         {activeTab === "tech" && <TechOnboardingTab />}
       </div>
+
+      {/* Passcode Modal */}
+      {showPasscodeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "oklch(0 0 0 / 0.6)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowPasscodeModal(false); setPasscode(""); } }}
+        >
+          <div
+            className="rounded-2xl p-8 w-80 shadow-2xl"
+            style={{ backgroundColor: "oklch(0.15 0.06 258)", border: "1px solid oklch(0.28 0.08 256)" }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                style={{ backgroundColor: "oklch(0.55 0.14 40)" }}
+              >
+                B
+              </div>
+              <div>
+                <div className="text-white font-semibold text-sm" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Brandon's Workspace</div>
+                <div className="text-xs" style={{ color: "oklch(0.65 0.05 250)" }}>Enter passcode to continue</div>
+              </div>
+            </div>
+
+            {/* Digit display */}
+            <div className="flex justify-center gap-3 mb-6">
+              {[0,1,2,3].map(i => (
+                <div
+                  key={i}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold transition-all"
+                  style={{
+                    backgroundColor: passcodeError ? "oklch(0.45 0.18 25 / 0.3)" : "oklch(0.22 0.07 258)",
+                    border: `2px solid ${
+                      passcodeError ? "oklch(0.65 0.2 25)" :
+                      passcode.length > i ? "oklch(0.72 0.12 220)" : "oklch(0.30 0.08 256)"
+                    }`,
+                    color: passcodeError ? "oklch(0.65 0.2 25)" : "white",
+                    transform: passcodeError ? "translateX(-2px)" : "none",
+                  }}
+                >
+                  {passcode.length > i ? "●" : ""}
+                </div>
+              ))}
+            </div>
+
+            {passcodeError && (
+              <p className="text-center text-xs mb-4" style={{ color: "oklch(0.65 0.2 25)" }}>Incorrect passcode — try again</p>
+            )}
+
+            {/* Numpad */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[1,2,3,4,5,6,7,8,9].map(n => (
+                <button
+                  key={n}
+                  onClick={() => handleDigitPress(String(n))}
+                  className="h-12 rounded-xl text-white font-semibold text-base transition-all active:scale-95"
+                  style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = "oklch(0.28 0.08 256)")}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = "oklch(0.22 0.07 258)")}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                onClick={() => setPasscode(p => p.slice(0, -1))}
+                className="h-12 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)", color: "oklch(0.65 0.05 250)" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "oklch(0.28 0.08 256)")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "oklch(0.22 0.07 258)")}
+              >
+                ⌫
+              </button>
+              <button
+                onClick={() => handleDigitPress("0")}
+                className="h-12 rounded-xl text-white font-semibold text-base transition-all active:scale-95"
+                style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "oklch(0.28 0.08 256)")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "oklch(0.22 0.07 258)")}
+              >
+                0
+              </button>
+              <button
+                onClick={() => handlePasscodeSubmit()}
+                className="h-12 rounded-xl text-white font-semibold text-sm transition-all active:scale-95"
+                style={{ backgroundColor: "oklch(0.55 0.14 40)", border: "1px solid oklch(0.60 0.16 40)" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "oklch(0.60 0.16 40)")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "oklch(0.55 0.14 40)")}
+              >
+                ✓
+              </button>
+            </div>
+
+            <button
+              onClick={() => { setShowPasscodeModal(false); setPasscode(""); }}
+              className="w-full text-xs py-2 rounded-lg transition-all"
+              style={{ color: "oklch(0.55 0.03 250)" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t mt-12 py-4" style={{ borderColor: "oklch(0.88 0.02 80)" }}>
