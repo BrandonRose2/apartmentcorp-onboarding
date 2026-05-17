@@ -82,7 +82,7 @@ export default function Home() {
         style={{ backgroundColor: "oklch(0.13 0.06 258)" }}
       >
         <img
-          src="/manus-storage/apartmentcorp-logo_f725102b.gif"
+          src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
           alt="ApartmentCorp"
           className="h-20 w-auto object-contain"
           style={{ maxWidth: "340px" }}

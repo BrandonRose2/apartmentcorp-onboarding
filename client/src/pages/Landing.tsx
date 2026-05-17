@@ -32,13 +32,27 @@ export default function Landing() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: AC.bg, fontFamily: AC.body, color: AC.fg }}>
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: AC.nav, borderColor: AC.border, backdropFilter: "blur(12px)" }}>
-        <div className="max-w-5xl mx-auto px-6 flex items-center h-16">
+        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between h-16">
           <img
-            src="/manus-storage/apartmentcorp-logo_f725102b.gif"
+            src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
             alt="ApartmentCorp"
             className="h-8 w-auto object-contain"
             style={{ maxWidth: "160px" }}
           />
+          <a
+            href="https://propertymax.ai/app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center transition-opacity hover:opacity-80"
+            title="Open PropertyMAX.ai"
+          >
+            <img
+              src="/manus-storage/PropertyMaxShimmer_nobg_325c0b21.gif"
+              alt="PropertyMAX.ai"
+              className="h-10 w-auto object-contain"
+              style={{ maxWidth: "120px" }}
+            />
+          </a>
         </div>
       </header>
 
@@ -58,7 +72,7 @@ export default function Landing() {
             {/* Animated Logo */}
             <div className="flex justify-center mb-8">
               <img
-                src="/manus-storage/apartmentcorp-logo_f725102b.gif"
+                src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
                 alt="ApartmentCorp"
                 className="h-28 w-auto object-contain"
                 style={{ maxWidth: "380px" }}
@@ -178,7 +192,7 @@ export default function Landing() {
       <footer className="border-t py-5" style={{ borderColor: AC.border }}>
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
           <img
-            src="/manus-storage/apartmentcorp-logo_f725102b.gif"
+            src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
             alt="ApartmentCorp"
             className="h-6 w-auto object-contain opacity-50"
             style={{ maxWidth: "120px" }}

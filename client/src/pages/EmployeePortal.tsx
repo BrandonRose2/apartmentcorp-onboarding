@@ -236,7 +236,7 @@ export default function EmployeePortal() {
       <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: AC.nav, borderColor: AC.border, backdropFilter: "blur(12px)" }}>
         <div className="max-w-4xl mx-auto px-6 flex items-center justify-between h-16">
           <img
-            src="/manus-storage/apartmentcorp-logo_f725102b.gif"
+            src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
             alt="ApartmentCorp"
             className="h-8 w-auto object-contain"
             style={{ maxWidth: "160px" }}
