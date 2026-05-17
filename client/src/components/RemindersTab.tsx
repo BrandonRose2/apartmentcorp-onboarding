@@ -55,7 +55,7 @@ function uid() {
 const DEFAULT_REMINDERS: ReminderItem[] = [
   {
     id: "default-1",
-    text: "Design Ethan Fowler's Technology Onboarding admin flow — credential provisioning ecosystem",
+    text: "Design Ethan Cowles's Technology Onboarding admin flow — credential provisioning ecosystem",
     note: "Full blueprint:\n\n1. BUILD: Ethan's fillable Technology Onboarding intake form (already started in the Technology Onboarding tab) — he fills in every login/credential for each new hire across all platforms.\n\n2. AUTO-POPULATE: Once Ethan marks a record complete, the new hire's Company Websites & Logins tab is automatically populated with their personal credentials.\n\n3. SHAREPOINT SYNC: All completed records auto-sync to a SharePoint file in the ApartmentCorp OneDrive as a permanent HR record — accessible to Ethan, Admin Staff, and the new hire via unique PIN #.\n\n4. SECURE ACCESS: New hire accesses their credential page via a unique PIN # — Ethan and Admin see all employees, new hire sees only their own.\n\n5. SEND ETHAN: Send Ethan a fillable form webpage of everything included in his onboarding process — the information he inputs will auto-populate the Company Websites & Logins tab once complete.\n\nNeeds: Microsoft 365 tenant domain, Ethan's admin email, SharePoint folder path.",
     done: false,
     priority: "urgent",

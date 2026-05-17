@@ -53,7 +53,6 @@ const REGIONS: Region[] = [
       { id: "coral-village", name: "Coral Village", units: 72, type: "Conventional" },
       { id: "holiday", name: "Holiday", units: 115, type: "Conventional" },
       { id: "cumberland", name: "Cumberland", units: 68, type: "Regional HUD / Voucher", note: "60 HUD / 8 Voucher" },
-      { id: "village-green", name: "Village Green", units: 80, type: "Conventional" },
       { id: "walnut-hill", name: "Walnut Hill", units: 168, type: "Conventional" },
     ],
   },
@@ -185,12 +184,12 @@ export function PropertyDocumentHub() {
             Property Document Hub
           </h2>
           <p className="text-sm mt-0.5" style={{ color: "oklch(0.65 0.04 220)" }}>
-            41 properties · 5 regions · {totalFiles} files uploaded
+            40 properties · 5 regions · {totalFiles} files uploaded
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: "oklch(0.22 0.08 256)", color: "oklch(0.72 0.12 220)" }}>
           <Building2 className="w-3.5 h-3.5" />
-          3,726 Total Units
+          3,646 Total Units
         </div>
       </div>
 

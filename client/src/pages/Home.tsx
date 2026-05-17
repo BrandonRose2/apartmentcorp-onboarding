@@ -72,7 +72,7 @@ export default function Home() {
       label: (
         <span className="flex flex-col items-start leading-tight">
           <span>Technology Onboarding</span>
-          <span className="text-[10px] font-normal opacity-60">Ethan Fowler</span>
+          <span className="text-[10px] font-normal opacity-60">Ethan Cowles</span>
         </span>
       ),
       icon: <Monitor className="w-4 h-4" />,

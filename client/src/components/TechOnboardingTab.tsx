@@ -1,5 +1,5 @@
 /**
- * TechOnboardingTab — Ethan Fowler's Technology Onboarding fillable form
+ * TechOnboardingTab — Ethan Cowles's Technology Onboarding fillable form
  * Design: ApartmentCorp dark navy brand, teal accents
  * Purpose: Ethan fills in all credentials/logins for a new hire; data saves to localStorage
  *          and will eventually auto-populate the Company Websites & Logins tab per employee.
@@ -248,7 +248,7 @@ const TECH_SECTIONS: TechSection[] = [
       { key: "other_system_3", label: "Other System 3 — Name & Login", placeholder: "System Name: username / password", type: "text" },
       { key: "special_instructions", label: "Special Instructions / Notes for New Hire", placeholder: "Any additional setup steps, access notes, or reminders...", type: "text" },
       { key: "it_ticket_number", label: "IT Ticket / Reference Number", placeholder: "INC-20240001", type: "text" },
-      { key: "completed_by", label: "Completed By (Ethan's confirmation)", placeholder: "Ethan Fowler", type: "text" },
+      { key: "completed_by", label: "Completed By (Ethan's confirmation)", placeholder: "Ethan Cowles", type: "text" },
     ],
   },
 ];
@@ -444,7 +444,7 @@ export function TechOnboardingTab() {
                   style={{ backgroundColor: "oklch(0.22 0.08 258)", color: "oklch(0.72 0.12 220)" }}
                 >
                   <User className="w-3 h-3" />
-                  Ethan Fowler
+                  Ethan Cowles
                 </span>
                 <span>· IT Credential Provisioning Form</span>
               </p>
