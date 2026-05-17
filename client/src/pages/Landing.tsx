@@ -8,6 +8,7 @@
 import { motion } from "framer-motion";
 import { ChevronRight, ClipboardList, UserCheck } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState } from "react";
 
 // Brand constants
 const AC = {
@@ -27,6 +28,33 @@ const AC = {
 
 export default function Landing() {
   const [, navigate] = useLocation();
+  const [showAdminPasscode, setShowAdminPasscode] = useState(false);
+  const [adminCode, setAdminCode] = useState("");
+  const [adminError, setAdminError] = useState(false);
+
+  const handleAdminDigit = (digit: string) => {
+    if (adminCode.length < 4) {
+      const next = adminCode + digit;
+      setAdminCode(next);
+      if (next.length === 4) {
+        setTimeout(() => checkAdminCode(next), 120);
+      }
+    }
+  };
+
+  const checkAdminCode = (code?: string) => {
+    const check = code ?? adminCode;
+    if (check === "3060") {
+      setShowAdminPasscode(false);
+      setAdminCode("");
+      setAdminError(false);
+      navigate("/admin");
+    } else {
+      setAdminError(true);
+      setAdminCode("");
+      setTimeout(() => setAdminError(false), 1500);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: AC.bg, fontFamily: AC.body, color: AC.fg }}>
@@ -160,7 +188,7 @@ export default function Landing() {
           <motion.button
             initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45, duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-            onClick={() => navigate("/admin")}
+            onClick={() => { setShowAdminPasscode(true); setAdminCode(""); setAdminError(false); }}
             className="group text-left rounded-2xl p-8 transition-all hover:shadow-2xl active:scale-[0.98]"
             style={{
               backgroundColor: AC.bgCard,
@@ -203,6 +231,109 @@ export default function Landing() {
           </a>
         </motion.p>
       </div>
+
+      {/* Admin Passcode Modal */}
+      {showAdminPasscode && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "oklch(0 0 0 / 0.65)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowAdminPasscode(false); setAdminCode(""); } }}
+        >
+          <div
+            className="rounded-2xl p-8 w-80 shadow-2xl"
+            style={{ backgroundColor: "oklch(0.15 0.06 258)", border: "1px solid oklch(0.28 0.08 256)" }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
+              >
+                <ClipboardList className="w-5 h-5" style={{ color: AC.fgMuted }} />
+              </div>
+              <div>
+                <div className="text-white font-semibold text-sm" style={{ fontFamily: AC.heading }}>HR Admin Dashboard</div>
+                <div className="text-xs" style={{ color: "oklch(0.55 0.03 250)" }}>Enter passcode to continue</div>
+              </div>
+            </div>
+
+            {/* Digit display */}
+            <div className="flex justify-center gap-3 mb-6">
+              {[0,1,2,3].map(i => (
+                <div
+                  key={i}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold transition-all"
+                  style={{
+                    backgroundColor: adminError ? "oklch(0.45 0.18 25 / 0.3)" : "oklch(0.22 0.07 258)",
+                    border: `2px solid ${
+                      adminError ? "oklch(0.65 0.2 25)" :
+                      adminCode.length > i ? AC.teal : "oklch(0.30 0.08 256)"
+                    }`,
+                    color: adminError ? "oklch(0.65 0.2 25)" : "white",
+                    transform: adminError ? "translateX(-2px)" : "none",
+                  }}
+                >
+                  {adminCode.length > i ? "●" : ""}
+                </div>
+              ))}
+            </div>
+
+            {adminError && (
+              <p className="text-center text-xs mb-4" style={{ color: "oklch(0.65 0.2 25)" }}>Incorrect passcode — try again</p>
+            )}
+
+            {/* Numpad */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[1,2,3,4,5,6,7,8,9].map(n => (
+                <button
+                  key={n}
+                  onClick={() => handleAdminDigit(String(n))}
+                  className="h-12 rounded-xl text-white font-semibold text-base transition-all active:scale-95"
+                  style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = "oklch(0.28 0.08 256)")}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = "oklch(0.22 0.07 258)")}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                onClick={() => setAdminCode(c => c.slice(0, -1))}
+                className="h-12 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)", color: "oklch(0.65 0.05 250)" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "oklch(0.28 0.08 256)")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "oklch(0.22 0.07 258)")}
+              >
+                ⌫
+              </button>
+              <button
+                onClick={() => handleAdminDigit("0")}
+                className="h-12 rounded-xl text-white font-semibold text-base transition-all active:scale-95"
+                style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "oklch(0.28 0.08 256)")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "oklch(0.22 0.07 258)")}
+              >
+                0
+              </button>
+              <button
+                onClick={() => checkAdminCode()}
+                className="h-12 rounded-xl text-white font-semibold text-sm transition-all active:scale-95"
+                style={{ backgroundColor: AC.tealDim, border: `1px solid ${AC.teal}` }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = AC.teal)}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = AC.tealDim)}
+              >
+                ✓
+              </button>
+            </div>
+
+            <button
+              onClick={() => { setShowAdminPasscode(false); setAdminCode(""); }}
+              className="w-full text-xs py-2 rounded-lg transition-all"
+              style={{ color: "oklch(0.45 0.02 230)" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t py-5" style={{ borderColor: AC.border }}>
