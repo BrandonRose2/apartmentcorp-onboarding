@@ -58,7 +58,7 @@ export default function Landing() {
               src="/manus-storage/PropertyMaxShimmer_5e119ab3_5fd51363.gif"
               alt="PropertyMAX.ai"
               className="object-contain flex-shrink-0"
-              style={{ width: "52px", height: "52px", objectFit: "contain" }}
+              style={{ width: "90px", height: "90px", objectFit: "contain" }}
             />
           </a>
         </div>
