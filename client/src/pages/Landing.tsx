@@ -33,12 +33,20 @@ export default function Landing() {
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: AC.nav, borderColor: AC.border, backdropFilter: "blur(12px)" }}>
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between h-16">
-          <img
-            src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
-            alt="ApartmentCorp"
-            className="h-8 w-auto object-contain"
-            style={{ maxWidth: "160px" }}
-          />
+          <a
+            href="https://apartmentcorp.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center transition-opacity hover:opacity-80"
+            title="Visit ApartmentCorp.com"
+          >
+            <img
+              src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
+              alt="ApartmentCorp"
+              className="h-8 w-auto object-contain"
+              style={{ maxWidth: "160px" }}
+            />
+          </a>
           <a
             href="https://propertymax.ai/app/"
             target="_blank"
@@ -71,12 +79,20 @@ export default function Landing() {
           >
             {/* Animated Logo */}
             <div className="flex justify-center mb-8">
-              <img
-                src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
-                alt="ApartmentCorp"
-                className="h-28 w-auto object-contain"
-                style={{ maxWidth: "380px" }}
-              />
+              <a
+                href="https://apartmentcorp.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-opacity hover:opacity-80"
+                title="Visit ApartmentCorp.com"
+              >
+                <img
+                  src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
+                  alt="ApartmentCorp"
+                  className="h-28 w-auto object-contain"
+                  style={{ maxWidth: "380px" }}
+                />
+              </a>
             </div>
             <h1
               className="text-5xl sm:text-6xl font-semibold mb-4 leading-tight"
@@ -191,12 +207,20 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t py-5" style={{ borderColor: AC.border }}>
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
-          <img
-            src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
-            alt="ApartmentCorp"
-            className="h-6 w-auto object-contain opacity-50"
-            style={{ maxWidth: "120px" }}
-          />
+          <a
+            href="https://apartmentcorp.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-opacity hover:opacity-70"
+            title="Visit ApartmentCorp.com"
+          >
+            <img
+              src="/manus-storage/AptCorpShimmer_nobg_db1667d2.gif"
+              alt="ApartmentCorp"
+              className="h-6 w-auto object-contain opacity-50"
+              style={{ maxWidth: "120px" }}
+            />
+          </a>
           <p className="text-xs" style={{ color: "oklch(0.40 0.02 230)" }}>
             © {new Date().getFullYear()} ApartmentCorp. All rights reserved.
           </p>
