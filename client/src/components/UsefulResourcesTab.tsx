@@ -54,6 +54,14 @@ const RESOURCE_CATEGORIES: ResourceCategory[] = [
         tag: "Platform",
       },
       {
+        id: "apt-properties",
+        title: "Apartment Corp Properties",
+        description: "Directory of all ApartmentCorp properties — locations, details, and portfolio overview.",
+        url: "https://aptorgchart-8jqkkzne.manus.space/",
+        icon: "🏘️",
+        tag: "Properties",
+      },
+      {
         id: "granite-park",
         title: "Granite Park Capital",
         description: "ApartmentCorp's investment and capital arm — learn about our fund strategy.",
@@ -187,7 +195,8 @@ const TAG_COLORS: Record<string, { bg: string; color: string }> = {
   Program:    { bg: "oklch(0.72 0.12 280 / 0.18)", color: "oklch(0.72 0.12 280)" },
   Investment: { bg: "oklch(0.75 0.12 80 / 0.18)",  color: "oklch(0.75 0.12 80)" },
   News:       { bg: "oklch(0.72 0.12 220 / 0.12)", color: "oklch(0.65 0.02 230)" },
-  SharePoint: { bg: "oklch(0.65 0.18 250 / 0.20)", color: "oklch(0.72 0.16 250)" },
+  SharePoint:  { bg: "oklch(0.65 0.18 250 / 0.20)", color: "oklch(0.72 0.16 250)" },
+  Properties:  { bg: "oklch(0.65 0.16 160 / 0.20)", color: "oklch(0.72 0.14 160)" },
 };
 
 const AC = {
