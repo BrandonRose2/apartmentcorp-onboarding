@@ -51,7 +51,7 @@ export default function Landing() {
             href="https://propertymax.ai/app/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 transition-opacity hover:opacity-80"
+            className="flex items-center transition-opacity hover:opacity-80"
             title="Open PropertyMAX.ai"
           >
             <img
@@ -60,9 +60,6 @@ export default function Landing() {
               className="object-contain flex-shrink-0"
               style={{ width: "52px", height: "52px", objectFit: "contain" }}
             />
-            <span style={{ fontFamily: AC.body, fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em", color: "oklch(0.97 0.005 220)" }}>
-              PropertyMAX<span style={{ color: "oklch(0.72 0.22 210)", fontWeight: 400 }}>.ai</span>
-            </span>
           </a>
         </div>
       </header>
