@@ -14,13 +14,12 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { PhaseNavigator } from "@/components/PhaseNavigator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { PHASES } from "@/lib/onboardingData";
-import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save, Monitor, MapPin, User, ChevronDown, X } from "lucide-react";
+import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save, Monitor, User, ChevronDown, X } from "lucide-react";
 import { UsefulResourcesTab } from "@/components/UsefulResourcesTab";
 import { RemindersTab } from "@/components/RemindersTab";
 import { TechOnboardingTab } from "@/components/TechOnboardingTab";
-import { PropertyDocumentHub } from "@/components/PropertyDocumentHub";
 
-type ActiveTab = "checklist" | "documents" | "properties" | "websites" | "resources" | "tech";
+type ActiveTab = "checklist" | "documents" | "websites" | "resources" | "tech";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("checklist");
@@ -50,11 +49,6 @@ export default function Home() {
       label: "Document Hub",
       icon: <FolderOpen className="w-4 h-4" />,
       badge: onboarding.totalFiles > 0 ? onboarding.totalFiles : undefined,
-    },
-    {
-      id: "properties",
-      label: "Property Files",
-      icon: <MapPin className="w-4 h-4" />,
     },
     {
       id: "websites",
@@ -254,7 +248,7 @@ export default function Home() {
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">
-                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "properties" ? "Properties" : tab.id === "websites" ? "Websites" : tab.id === "resources" ? "Resources" : "Tech"}
+                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : tab.id === "resources" ? "Resources" : "Tech"}
                   </span>
                   {tab.badge !== undefined && (
                     <span
@@ -310,7 +304,6 @@ export default function Home() {
           />
         )}
 
-        {activeTab === "properties" && <PropertyDocumentHub />}
         {activeTab === "websites" && <CompanyWebsitesTab />}
         {activeTab === "resources" && <UsefulResourcesTab />}
         {activeTab === "tech" && <TechOnboardingTab />}
