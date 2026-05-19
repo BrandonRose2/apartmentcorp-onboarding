@@ -14,12 +14,13 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { PhaseNavigator } from "@/components/PhaseNavigator";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
 import { PHASES } from "@/lib/onboardingData";
-import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save, Monitor, User, ChevronDown, X } from "lucide-react";
+import { Building2, BookOpen, Bell, CheckSquare, FolderOpen, Globe, RotateCcw, Save, Monitor, User, ChevronDown, X, Users } from "lucide-react";
 import { UsefulResourcesTab } from "@/components/UsefulResourcesTab";
 import { RemindersTab } from "@/components/RemindersTab";
 import { TechOnboardingTab } from "@/components/TechOnboardingTab";
+import { NewHireReviewTab } from "@/components/NewHireReviewTab";
 
-type ActiveTab = "checklist" | "documents" | "websites" | "resources" | "tech";
+type ActiveTab = "checklist" | "documents" | "websites" | "resources" | "tech" | "newhires";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("checklist");
@@ -125,6 +126,11 @@ export default function Home() {
         </span>
       ),
       icon: <Monitor className="w-4 h-4" />,
+    },
+    {
+      id: "newhires",
+      label: "New Hire Review",
+      icon: <Users className="w-4 h-4" />,
     },
   ];
 
@@ -303,7 +309,7 @@ export default function Home() {
                   {tab.icon}
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">
-                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : tab.id === "resources" ? "Resources" : "Tech"}
+                    {tab.id === "checklist" ? "Checklist" : tab.id === "documents" ? "Documents" : tab.id === "websites" ? "Websites" : tab.id === "resources" ? "Resources" : tab.id === "tech" ? "Tech" : "New Hires"}
                   </span>
                   {tab.badge !== undefined && (
                     <span
@@ -362,6 +368,14 @@ export default function Home() {
         {activeTab === "websites" && <CompanyWebsitesTab />}
         {activeTab === "resources" && <UsefulResourcesTab />}
         {activeTab === "tech" && <TechOnboardingTab />}
+        {activeTab === "newhires" && (
+          <div
+            className="rounded-2xl p-6"
+            style={{ backgroundColor: "oklch(0.13 0.06 258)", border: "1px solid oklch(0.25 0.07 256)" }}
+          >
+            <NewHireReviewTab />
+          </div>
+        )}
       </div>
 
       {/* Passcode Modal */}

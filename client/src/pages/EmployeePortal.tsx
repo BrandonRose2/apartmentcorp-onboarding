@@ -2,14 +2,14 @@
  * ApartmentCorp — New Employee Onboarding Portal
  * Brand: Dark navy oklch(0.13 0.06 258), teal accent oklch(0.72 0.12 220)
  * Typography: Cormorant Garamond (headings) + Inter (body/forms)
- * Logo: /manus-storage/ac-logo_324ddb7c.webp
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ChevronRight, Clock, HelpCircle, Save, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronRight, Clock, HelpCircle, Save, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
 import { NewHireAuth } from "@/components/NewHireAuth";
+import { trpc } from "@/lib/trpc";
 
 // ── Brand constants ───────────────────────────────────────────────────────────
 const AC = {
@@ -38,7 +38,8 @@ export interface Chapter {
   accentColor: string;
   estimatedMinutes: number;
   description: string;
-  status: "locked" | "available" | "in-progress" | "complete";
+  status: "locked" | "available" | "in-progress" | "complete" | "submitted";
+  formType: "employment_application" | "confidentiality_agreement" | "tracking_agreement" | "policies_acknowledgment" | "direct_deposit" | "w4" | "it2104" | "i9" | "maintenance_test" | null;
   forms: FormGroup[];
 }
 
@@ -51,115 +52,403 @@ export interface FormGroup {
 export interface FormFieldDef {
   id: string;
   label: string;
-  type: "text" | "email" | "tel" | "date" | "select" | "radio" | "checkbox" | "textarea" | "ssn" | "signature";
+  type: "text" | "email" | "tel" | "date" | "select" | "radio" | "checkbox" | "textarea" | "ssn" | "signature" | "number";
   placeholder?: string;
   required?: boolean;
   helpText?: string;
   options?: string[];
   sensitive?: boolean;
+  fullWidth?: boolean;
 }
+
+const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
 // ── Chapter data ──────────────────────────────────────────────────────────────
 const CHAPTERS: Chapter[] = [
   {
-    id: "personal",
+    id: "employment_application",
     number: 1,
-    title: "A Little About You",
-    subtitle: "Personal & contact information",
-    icon: "👋",
+    title: "Employment Application",
+    subtitle: "Personal info, work history & references",
+    icon: "📝",
     accentColor: AC.teal,
-    estimatedMinutes: 5,
-    description: "Let's start with the basics — who you are and how to reach you. This information helps us set up your employee profile.",
+    estimatedMinutes: 15,
+    description: "Complete your employment application — personal information, work history, skills, references, and emergency contacts.",
     status: "available",
+    formType: "employment_application",
     forms: [
       {
-        id: "personal-info",
-        title: "Your Personal Information",
+        id: "personal-data",
+        title: "Personal Information",
         fields: [
-          { id: "first-name", label: "First Name", type: "text", placeholder: "Your first name", required: true },
-          { id: "last-name", label: "Last Name", type: "text", placeholder: "Your last name", required: true },
-          { id: "preferred-name", label: "Preferred Name", type: "text", placeholder: "What should we call you?", helpText: "The name you'd like on your badge and in our systems" },
-          { id: "email", label: "Personal Email", type: "email", placeholder: "your@email.com", required: true, helpText: "We'll send your welcome package here before your first day" },
-          { id: "phone", label: "Mobile Phone", type: "tel", placeholder: "(555) 000-0000", required: true },
+          { id: "first_name", label: "First Name", type: "text", placeholder: "First name", required: true },
+          { id: "last_name", label: "Last Name", type: "text", placeholder: "Last name", required: true },
+          { id: "middle_name", label: "Middle Name", type: "text", placeholder: "Middle name" },
+          { id: "preferred_name", label: "Preferred Name / Nickname", type: "text", placeholder: "What should we call you?" },
           { id: "dob", label: "Date of Birth", type: "date", required: true, sensitive: true },
+          { id: "ssn", label: "Social Security Number", type: "ssn", placeholder: "XXX-XX-XXXX", required: true, sensitive: true, helpText: "Your SSN is encrypted and used only for payroll and tax purposes." },
+          { id: "phone_home", label: "Home Phone", type: "tel", placeholder: "(555) 000-0000" },
+          { id: "phone_cell", label: "Cell Phone", type: "tel", placeholder: "(555) 000-0000", required: true },
+          { id: "email_personal", label: "Personal Email", type: "email", placeholder: "your@email.com", required: true },
+          { id: "address1", label: "Street Address", type: "text", placeholder: "123 Main Street", required: true, fullWidth: true },
+          { id: "address2", label: "Apt / Suite", type: "text", placeholder: "Optional" },
+          { id: "city", label: "City", type: "text", placeholder: "City", required: true },
+          { id: "state", label: "State", type: "select", required: true, options: US_STATES },
+          { id: "zip", label: "ZIP Code", type: "text", placeholder: "00000", required: true },
+          { id: "us_citizen", label: "Are you a U.S. Citizen?", type: "radio", required: true, options: ["Yes", "No"] },
+          { id: "authorized_to_work", label: "Are you authorized to work in the U.S.?", type: "radio", required: true, options: ["Yes", "No"] },
+          { id: "felony_conviction", label: "Have you ever been convicted of a felony?", type: "radio", required: true, options: ["Yes", "No"] },
+          { id: "felony_explanation", label: "If yes, please explain", type: "textarea", placeholder: "Explain circumstances...", helpText: "A conviction does not automatically disqualify you from employment." },
         ],
       },
       {
-        id: "address",
-        title: "Your Home Address",
+        id: "position-info",
+        title: "Position Applied For",
         fields: [
-          { id: "address1", label: "Street Address", type: "text", placeholder: "123 Main Street", required: true },
-          { id: "address2", label: "Apt / Suite", type: "text", placeholder: "Optional" },
-          { id: "city", label: "City", type: "text", placeholder: "City", required: true },
-          { id: "state", label: "State", type: "select", required: true, options: ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"] },
-          { id: "zip", label: "ZIP Code", type: "text", placeholder: "00000", required: true },
+          { id: "position_applied", label: "Position Applied For", type: "text", placeholder: "e.g., Leasing Agent, Maintenance Tech", required: true },
+          { id: "property_applied", label: "Property / Location", type: "text", placeholder: "Property name", required: true },
+          { id: "desired_salary", label: "Desired Salary / Pay Rate", type: "text", placeholder: "e.g., $18/hr or $45,000/yr" },
+          { id: "available_start_date", label: "Available Start Date", type: "date", required: true },
+          { id: "employment_type", label: "Employment Type Desired", type: "radio", options: ["Full-Time", "Part-Time", "Temporary", "Any"] },
+          { id: "currently_employed", label: "Are you currently employed?", type: "radio", options: ["Yes", "No"] },
+          { id: "contact_current_employer", label: "May we contact your current employer?", type: "radio", options: ["Yes", "No", "N/A"] },
+          { id: "how_heard", label: "How did you hear about this position?", type: "select", options: ["Indeed", "ZipRecruiter", "Employee Referral", "Company Website", "LinkedIn", "Craigslist", "Other"] },
+          { id: "referral_name", label: "If referred, by whom?", type: "text", placeholder: "Name of referral" },
+        ],
+      },
+      {
+        id: "work-history",
+        title: "Work History — Most Recent Employer",
+        fields: [
+          { id: "emp1_company", label: "Company Name", type: "text", placeholder: "Employer name" },
+          { id: "emp1_address", label: "Company Address", type: "text", placeholder: "Address", fullWidth: true },
+          { id: "emp1_phone", label: "Company Phone", type: "tel", placeholder: "(555) 000-0000" },
+          { id: "emp1_supervisor", label: "Supervisor Name", type: "text", placeholder: "Supervisor's name" },
+          { id: "emp1_title", label: "Your Job Title", type: "text", placeholder: "Job title" },
+          { id: "emp1_start", label: "Start Date", type: "date" },
+          { id: "emp1_end", label: "End Date", type: "date" },
+          { id: "emp1_salary", label: "Starting / Ending Pay", type: "text", placeholder: "e.g., $15/hr → $18/hr" },
+          { id: "emp1_duties", label: "Duties & Responsibilities", type: "textarea", placeholder: "Describe your main duties...", fullWidth: true },
+          { id: "emp1_reason_leaving", label: "Reason for Leaving", type: "text", placeholder: "Reason for leaving", fullWidth: true },
+          { id: "emp1_may_contact", label: "May we contact this employer?", type: "radio", options: ["Yes", "No"] },
+        ],
+      },
+      {
+        id: "work-history-2",
+        title: "Work History — Previous Employer",
+        fields: [
+          { id: "emp2_company", label: "Company Name", type: "text", placeholder: "Employer name" },
+          { id: "emp2_address", label: "Company Address", type: "text", placeholder: "Address", fullWidth: true },
+          { id: "emp2_phone", label: "Company Phone", type: "tel", placeholder: "(555) 000-0000" },
+          { id: "emp2_supervisor", label: "Supervisor Name", type: "text", placeholder: "Supervisor's name" },
+          { id: "emp2_title", label: "Your Job Title", type: "text", placeholder: "Job title" },
+          { id: "emp2_start", label: "Start Date", type: "date" },
+          { id: "emp2_end", label: "End Date", type: "date" },
+          { id: "emp2_salary", label: "Starting / Ending Pay", type: "text", placeholder: "e.g., $15/hr → $18/hr" },
+          { id: "emp2_duties", label: "Duties & Responsibilities", type: "textarea", placeholder: "Describe your main duties...", fullWidth: true },
+          { id: "emp2_reason_leaving", label: "Reason for Leaving", type: "text", placeholder: "Reason for leaving", fullWidth: true },
+          { id: "emp2_may_contact", label: "May we contact this employer?", type: "radio", options: ["Yes", "No"] },
+        ],
+      },
+      {
+        id: "education",
+        title: "Education",
+        fields: [
+          { id: "edu_high_school", label: "High School Name", type: "text", placeholder: "School name" },
+          { id: "edu_hs_location", label: "High School City, State", type: "text", placeholder: "City, State" },
+          { id: "edu_hs_graduated", label: "Graduated?", type: "radio", options: ["Yes", "No", "GED"] },
+          { id: "edu_college", label: "College / University", type: "text", placeholder: "Institution name" },
+          { id: "edu_college_location", label: "College City, State", type: "text", placeholder: "City, State" },
+          { id: "edu_college_degree", label: "Degree / Major", type: "text", placeholder: "e.g., B.S. Business Administration" },
+          { id: "edu_college_graduated", label: "Graduated?", type: "radio", options: ["Yes", "No", "In Progress"] },
+          { id: "edu_other", label: "Other Training / Certifications", type: "textarea", placeholder: "List any relevant certifications, licenses, or training...", fullWidth: true },
+        ],
+      },
+      {
+        id: "references",
+        title: "Professional References",
+        fields: [
+          { id: "ref1_name", label: "Reference 1 — Full Name", type: "text", placeholder: "Full name" },
+          { id: "ref1_company", label: "Company / Organization", type: "text", placeholder: "Where they work" },
+          { id: "ref1_title", label: "Their Title", type: "text", placeholder: "Job title" },
+          { id: "ref1_phone", label: "Phone", type: "tel", placeholder: "(555) 000-0000" },
+          { id: "ref1_relationship", label: "Relationship to You", type: "text", placeholder: "e.g., Former Supervisor" },
+          { id: "ref2_name", label: "Reference 2 — Full Name", type: "text", placeholder: "Full name" },
+          { id: "ref2_company", label: "Company / Organization", type: "text", placeholder: "Where they work" },
+          { id: "ref2_title", label: "Their Title", type: "text", placeholder: "Job title" },
+          { id: "ref2_phone", label: "Phone", type: "tel", placeholder: "(555) 000-0000" },
+          { id: "ref2_relationship", label: "Relationship to You", type: "text", placeholder: "e.g., Former Colleague" },
+        ],
+      },
+      {
+        id: "emergency-contact",
+        title: "Emergency Contact",
+        fields: [
+          { id: "ec_name", label: "Emergency Contact Name", type: "text", placeholder: "Full name", required: true },
+          { id: "ec_relationship", label: "Relationship", type: "text", placeholder: "e.g., Spouse, Parent, Sibling", required: true },
+          { id: "ec_phone_home", label: "Home Phone", type: "tel", placeholder: "(555) 000-0000" },
+          { id: "ec_phone_cell", label: "Cell Phone", type: "tel", placeholder: "(555) 000-0000", required: true },
+          { id: "ec_address", label: "Address", type: "text", placeholder: "Street address", fullWidth: true },
+          { id: "ec_city", label: "City", type: "text", placeholder: "City" },
+          { id: "ec_state", label: "State", type: "select", options: US_STATES },
+        ],
+      },
+      {
+        id: "applicant-statement",
+        title: "Applicant Statement & Signature",
+        fields: [
+          { id: "app_statement_agree", label: "I certify that all information provided is true and complete to the best of my knowledge. I understand that false information may result in termination. I authorize ApartmentCorp to verify all information and contact references.", type: "checkbox", placeholder: "I agree to the above statement", required: true, fullWidth: true },
+          { id: "app_signature", label: "Applicant Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
+          { id: "app_signature_date", label: "Date", type: "date", required: true },
         ],
       },
     ],
   },
   {
-    id: "employment",
+    id: "agreements",
     number: 2,
-    title: "Your Work Authorization",
-    subtitle: "I-9 Employment Eligibility",
-    icon: "📋",
+    title: "Company Agreements",
+    subtitle: "Confidentiality, GPS tracking & policies",
+    icon: "📜",
     accentColor: "oklch(0.72 0.18 220)",
-    estimatedMinutes: 8,
-    description: "Federal law requires us to verify your eligibility to work in the United States. This is a standard process for every new employee — nothing to worry about.",
+    estimatedMinutes: 10,
+    description: "Review and sign the ApartmentCorp Confidentiality Agreement, GPS/Tracking Agreement, and Company Policies Acknowledgment.",
     status: "locked",
-    forms: [],
+    formType: "confidentiality_agreement",
+    forms: [
+      {
+        id: "confidentiality",
+        title: "Confidentiality Agreement",
+        fields: [
+          { id: "conf_understand", label: "I understand that during my employment I will have access to confidential and proprietary information belonging to ApartmentCorp, including but not limited to: tenant information, financial records, business strategies, and personnel data.", type: "checkbox", placeholder: "I understand and agree", required: true, fullWidth: true },
+          { id: "conf_not_disclose", label: "I agree not to disclose, use, or copy any confidential information for personal benefit or for the benefit of any third party, during or after my employment.", type: "checkbox", placeholder: "I agree not to disclose confidential information", required: true, fullWidth: true },
+          { id: "conf_return", label: "I agree to return all company property and confidential materials upon termination of employment.", type: "checkbox", placeholder: "I agree to return all materials upon termination", required: true, fullWidth: true },
+          { id: "conf_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
+          { id: "conf_print_name", label: "Print Name", type: "text", placeholder: "Your full legal name", required: true },
+          { id: "conf_date", label: "Date Signed", type: "date", required: true },
+        ],
+      },
+      {
+        id: "gps-tracking",
+        title: "GPS / Tracking Agreement (allGeo)",
+        fields: [
+          { id: "gps_understand", label: "I understand that ApartmentCorp uses GPS and location tracking technology (allGeo) on company-provided devices and vehicles during work hours for operational and safety purposes.", type: "checkbox", placeholder: "I understand the GPS tracking policy", required: true, fullWidth: true },
+          { id: "gps_consent", label: "I consent to the use of GPS tracking on company devices and vehicles assigned to me during my working hours.", type: "checkbox", placeholder: "I consent to GPS tracking during work hours", required: true, fullWidth: true },
+          { id: "gps_personal_device", label: "If a personal device is used for work purposes, I understand I may be asked to install the allGeo app during work hours only.", type: "checkbox", placeholder: "I understand the personal device policy", required: true, fullWidth: true },
+          { id: "gps_employee_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
+          { id: "gps_print_name", label: "Print Name", type: "text", placeholder: "Your full legal name", required: true },
+          { id: "gps_date", label: "Date Signed", type: "date", required: true },
+        ],
+      },
+      {
+        id: "policies-acknowledgment",
+        title: "ApartmentCorp Policies Acknowledgment",
+        fields: [
+          { id: "pol_handbook", label: "I acknowledge that I have received, read, and understand the ApartmentCorp Employee Handbook and agree to comply with all policies and procedures contained therein.", type: "checkbox", placeholder: "I acknowledge receipt and understanding of the Employee Handbook", required: true, fullWidth: true },
+          { id: "pol_at_will", label: "I understand that my employment is at-will, meaning either I or ApartmentCorp may terminate the employment relationship at any time, with or without cause or notice.", type: "checkbox", placeholder: "I understand at-will employment", required: true, fullWidth: true },
+          { id: "pol_conduct", label: "I agree to adhere to ApartmentCorp's Code of Conduct, including standards for professional behavior, dress code, and respectful workplace practices.", type: "checkbox", placeholder: "I agree to the Code of Conduct", required: true, fullWidth: true },
+          { id: "pol_drug_free", label: "I understand that ApartmentCorp maintains a drug-free workplace policy and I agree to comply with all related requirements.", type: "checkbox", placeholder: "I agree to the drug-free workplace policy", required: true, fullWidth: true },
+          { id: "pol_social_media", label: "I understand and agree to comply with ApartmentCorp's social media policy regarding the representation of the company online.", type: "checkbox", placeholder: "I agree to the social media policy", required: true, fullWidth: true },
+          { id: "pol_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
+          { id: "pol_print_name", label: "Print Name", type: "text", placeholder: "Your full legal name", required: true },
+          { id: "pol_date", label: "Date Signed", type: "date", required: true },
+        ],
+      },
+    ],
   },
   {
     id: "payroll",
     number: 3,
-    title: "Let's Get You Paid",
-    subtitle: "Tax withholding & direct deposit",
+    title: "Payroll Setup",
+    subtitle: "Direct deposit, W-4 & NY state tax",
     icon: "💵",
     accentColor: "oklch(0.75 0.14 180)",
-    estimatedMinutes: 10,
-    description: "Set up your W-4 tax withholding and direct deposit so your first paycheck lands right on time.",
+    estimatedMinutes: 12,
+    description: "Set up your direct deposit and complete your federal and state tax withholding forms so your first paycheck arrives on time.",
     status: "locked",
-    forms: [],
+    formType: "direct_deposit",
+    forms: [
+      {
+        id: "direct-deposit",
+        title: "Direct Deposit Enrollment (Paychex)",
+        fields: [
+          { id: "dd_employee_name", label: "Employee Full Name", type: "text", placeholder: "As it appears on your bank account", required: true },
+          { id: "dd_employee_id", label: "Employee ID (if known)", type: "text", placeholder: "Leave blank if not yet assigned" },
+          { id: "dd_action", label: "Action", type: "radio", required: true, options: ["New Enrollment", "Change Existing", "Cancel"] },
+          { id: "dd_bank_name", label: "Bank / Financial Institution Name", type: "text", placeholder: "e.g., Chase, Bank of America", required: true },
+          { id: "dd_routing", label: "Routing Number (ABA)", type: "text", placeholder: "9-digit routing number", required: true, sensitive: true, helpText: "Found at the bottom-left of your check. Must be 9 digits." },
+          { id: "dd_account_number", label: "Account Number", type: "text", placeholder: "Your checking/savings account number", required: true, sensitive: true },
+          { id: "dd_account_type", label: "Account Type", type: "radio", required: true, options: ["Checking", "Savings"] },
+          { id: "dd_amount_type", label: "Deposit Amount", type: "radio", required: true, options: ["100% of Net Pay", "Fixed Dollar Amount", "Remaining Balance"] },
+          { id: "dd_fixed_amount", label: "Fixed Amount (if applicable)", type: "text", placeholder: "$0.00" },
+          { id: "dd_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
+          { id: "dd_date", label: "Date", type: "date", required: true },
+        ],
+      },
+      {
+        id: "w4",
+        title: "W-4 — Federal Employee's Withholding Certificate",
+        fields: [
+          { id: "w4_first_name", label: "First Name & Middle Initial", type: "text", placeholder: "First M.", required: true },
+          { id: "w4_last_name", label: "Last Name", type: "text", placeholder: "Last name", required: true },
+          { id: "w4_ssn", label: "Social Security Number", type: "ssn", placeholder: "XXX-XX-XXXX", required: true, sensitive: true },
+          { id: "w4_address", label: "Address", type: "text", placeholder: "Street address", required: true, fullWidth: true },
+          { id: "w4_city_state_zip", label: "City, State, ZIP", type: "text", placeholder: "City, ST 00000", required: true, fullWidth: true },
+          { id: "w4_filing_status", label: "Filing Status", type: "radio", required: true, options: ["Single or Married filing separately", "Married filing jointly or Qualifying surviving spouse", "Head of household"] },
+          { id: "w4_multiple_jobs", label: "Step 2 — Multiple Jobs or Spouse Works: Check if this applies to you", type: "checkbox", placeholder: "I have multiple jobs or my spouse also works", fullWidth: true },
+          { id: "w4_dependents_under17", label: "Step 3 — Dependents under age 17 (multiply by $2,000)", type: "text", placeholder: "e.g., 2 children = $4,000" },
+          { id: "w4_other_dependents", label: "Other dependents (multiply by $500)", type: "text", placeholder: "e.g., 1 other = $500" },
+          { id: "w4_total_credits", label: "Total Dependent Credits", type: "text", placeholder: "Sum of above" },
+          { id: "w4_other_income", label: "Step 4a — Other Income (not from jobs)", type: "text", placeholder: "e.g., $5,000" },
+          { id: "w4_deductions", label: "Step 4b — Deductions (if itemizing)", type: "text", placeholder: "e.g., $12,950" },
+          { id: "w4_extra_withholding", label: "Step 4c — Extra Withholding per Pay Period", type: "text", placeholder: "e.g., $50" },
+          { id: "w4_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
+          { id: "w4_date", label: "Date", type: "date", required: true },
+        ],
+      },
+      {
+        id: "it2104",
+        title: "IT-2104 — NY State Employee's Withholding Allowance Certificate",
+        fields: [
+          { id: "it_first_name", label: "First Name & Middle Initial", type: "text", placeholder: "First M.", required: true },
+          { id: "it_last_name", label: "Last Name", type: "text", placeholder: "Last name", required: true },
+          { id: "it_ssn", label: "Social Security Number", type: "ssn", placeholder: "XXX-XX-XXXX", required: true, sensitive: true },
+          { id: "it_address", label: "Permanent Home Address", type: "text", placeholder: "Street address", required: true, fullWidth: true },
+          { id: "it_city", label: "City", type: "text", placeholder: "City", required: true },
+          { id: "it_state", label: "State", type: "select", required: true, options: US_STATES },
+          { id: "it_zip", label: "ZIP Code", type: "text", placeholder: "00000", required: true },
+          { id: "it_ny_resident", label: "Are you a New York State resident?", type: "radio", required: true, options: ["Yes", "No"] },
+          { id: "it_nyc_resident", label: "Are you a New York City resident?", type: "radio", required: true, options: ["Yes", "No"] },
+          { id: "it_yonkers_resident", label: "Are you a Yonkers resident?", type: "radio", required: true, options: ["Yes", "No"] },
+          { id: "it_allowances_ny", label: "Number of NY State Withholding Allowances", type: "number", placeholder: "e.g., 1", required: true },
+          { id: "it_allowances_nyc", label: "Number of NYC Withholding Allowances (if NYC resident)", type: "number", placeholder: "e.g., 1" },
+          { id: "it_allowances_yonkers", label: "Number of Yonkers Withholding Allowances (if Yonkers resident)", type: "number", placeholder: "e.g., 1" },
+          { id: "it_additional_ny", label: "Additional NY State Withholding per Pay Period", type: "text", placeholder: "$0.00" },
+          { id: "it_additional_nyc", label: "Additional NYC Withholding per Pay Period", type: "text", placeholder: "$0.00" },
+          { id: "it_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
+          { id: "it_date", label: "Date", type: "date", required: true },
+        ],
+      },
+    ],
+  },
+  {
+    id: "i9",
+    number: 4,
+    title: "Work Authorization (I-9)",
+    subtitle: "Employment Eligibility Verification",
+    icon: "🪪",
+    accentColor: "oklch(0.72 0.12 280)",
+    estimatedMinutes: 8,
+    description: "Federal law requires us to verify your eligibility to work in the United States. Complete Section 1 — your employer will complete Section 2 on or before your first day.",
+    status: "locked",
+    formType: "i9",
+    forms: [
+      {
+        id: "i9-section1",
+        title: "I-9 Section 1 — Employee Information & Attestation",
+        fields: [
+          { id: "i9_last_name", label: "Last Name (Family Name)", type: "text", placeholder: "Last name", required: true },
+          { id: "i9_first_name", label: "First Name (Given Name)", type: "text", placeholder: "First name", required: true },
+          { id: "i9_middle_initial", label: "Middle Initial", type: "text", placeholder: "M" },
+          { id: "i9_other_last_names", label: "Other Last Names Used (if any)", type: "text", placeholder: "Maiden name, etc.", fullWidth: true },
+          { id: "i9_address", label: "Address (Street Number and Name)", type: "text", placeholder: "123 Main Street", required: true, fullWidth: true },
+          { id: "i9_apt", label: "Apt. Number", type: "text", placeholder: "Optional" },
+          { id: "i9_city", label: "City or Town", type: "text", placeholder: "City", required: true },
+          { id: "i9_state", label: "State", type: "select", required: true, options: US_STATES },
+          { id: "i9_zip", label: "ZIP Code", type: "text", placeholder: "00000", required: true },
+          { id: "i9_dob", label: "Date of Birth", type: "date", required: true, sensitive: true },
+          { id: "i9_ssn", label: "U.S. Social Security Number", type: "ssn", placeholder: "XXX-XX-XXXX", sensitive: true, helpText: "Providing your SSN is voluntary unless your employer participates in E-Verify." },
+          { id: "i9_email", label: "Employee's Email Address", type: "email", placeholder: "your@email.com" },
+          { id: "i9_phone", label: "Employee's Telephone Number", type: "tel", placeholder: "(555) 000-0000" },
+          { id: "i9_citizenship_status", label: "Citizenship/Immigration Status", type: "radio", required: true, options: [
+            "A citizen of the United States",
+            "A noncitizen national of the United States",
+            "A lawful permanent resident",
+            "An alien authorized to work"
+          ], fullWidth: true },
+          { id: "i9_alien_number", label: "Alien Registration Number / USCIS Number (if applicable)", type: "text", placeholder: "A-Number", helpText: "Required if you selected 'lawful permanent resident' or 'alien authorized to work'." },
+          { id: "i9_i94_number", label: "Form I-94 Admission Number (if applicable)", type: "text", placeholder: "I-94 number" },
+          { id: "i9_foreign_passport", label: "Foreign Passport Number (if applicable)", type: "text", placeholder: "Passport number" },
+          { id: "i9_country_of_issuance", label: "Country of Issuance (if applicable)", type: "text", placeholder: "Country" },
+          { id: "i9_expiration_date", label: "Expiration Date of Work Authorization (if applicable)", type: "date" },
+          { id: "i9_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature. By signing, you attest that the information is true and correct.", fullWidth: true },
+          { id: "i9_signature_date", label: "Date of Signature", type: "date", required: true },
+        ],
+      },
+      {
+        id: "i9-documents",
+        title: "I-9 Documents — List of Acceptable Documents",
+        fields: [
+          { id: "i9_list_choice", label: "Which documents will you present?", type: "radio", required: true, options: [
+            "List A — One document that establishes both identity and employment authorization",
+            "List B + C — One document from List B (identity) AND one from List C (employment authorization)"
+          ], fullWidth: true },
+          { id: "i9_list_a_doc", label: "List A Document Type (if applicable)", type: "select", options: [
+            "U.S. Passport or U.S. Passport Card",
+            "Permanent Resident Card (Form I-551)",
+            "Foreign Passport with I-551 stamp",
+            "Employment Authorization Document (Form I-766)",
+            "Foreign Passport with Form I-94",
+            "Passport from Federated States of Micronesia or Marshall Islands",
+            "Other"
+          ], fullWidth: true },
+          { id: "i9_list_b_doc", label: "List B Document Type (if applicable)", type: "select", options: [
+            "Driver's License or State ID",
+            "ID Card issued by federal, state, or local government",
+            "School ID with photograph",
+            "Voter's registration card",
+            "U.S. Military card or draft record",
+            "Military dependent's ID card",
+            "U.S. Coast Guard Merchant Mariner Card",
+            "Native American tribal document",
+            "Driver's license issued by a Canadian government authority",
+            "Other"
+          ], fullWidth: true },
+          { id: "i9_list_c_doc", label: "List C Document Type (if applicable)", type: "select", options: [
+            "U.S. Social Security card",
+            "Certification of Birth Abroad (Form FS-545)",
+            "Certification of Report of Birth (Form DS-1350)",
+            "Original or certified copy of birth certificate",
+            "Native American tribal document",
+            "U.S. Citizen ID Card (Form I-197)",
+            "Identification Card for Use of Resident Citizen (Form I-179)",
+            "Employment authorization document issued by DHS",
+            "Other"
+          ], fullWidth: true },
+          { id: "i9_doc_note", label: "Note", type: "checkbox", placeholder: "I understand that I must present original documents (not photocopies) to my employer on or before my first day of employment.", required: true, fullWidth: true },
+        ],
+      },
+    ],
   },
   {
     id: "benefits",
-    number: 4,
-    title: "Your Benefits",
+    number: 5,
+    title: "Benefits Enrollment",
     subtitle: "Health, dental, vision & more",
     icon: "🏥",
     accentColor: "oklch(0.72 0.12 280)",
     estimatedMinutes: 15,
     description: "Explore and enroll in your ApartmentCorp benefits package. You have 30 days from your start date to make your selections.",
     status: "locked",
+    formType: null,
     forms: [],
   },
   {
-    id: "policies",
-    number: 5,
-    title: "Our Agreements",
-    subtitle: "Handbook & policy acknowledgments",
-    icon: "📖",
-    accentColor: "oklch(0.75 0.12 80)",
-    estimatedMinutes: 12,
-    description: "Review and acknowledge our company policies, employee handbook, and code of conduct. We keep it straightforward.",
-    status: "locked",
-    forms: [],
-  },
-  {
-    id: "emergency",
+    id: "maintenance_test",
     number: 6,
-    title: "Just In Case",
-    subtitle: "Emergency contacts",
-    icon: "🆘",
-    accentColor: "oklch(0.72 0.18 30)",
-    estimatedMinutes: 3,
-    description: "Who should we contact in an emergency? This information stays private and is only used when we need to reach someone on your behalf.",
+    title: "Maintenance Skills Test",
+    subtitle: "Plumbing, electrical, HVAC & more",
+    icon: "🔧",
+    accentColor: "oklch(0.75 0.12 80)",
+    estimatedMinutes: 30,
+    description: "Complete the maintenance skills assessment. This test covers plumbing, electrical, general carpentry, appliances, HVAC, and pool maintenance.",
     status: "locked",
+    formType: "maintenance_test",
     forms: [],
   },
 ];
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Main Component ────────────────────────────────────────────────name──────────────
 function EmployeePortalContent() {
   const [employeeName, setEmployeeName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -171,8 +460,11 @@ function EmployeePortalContent() {
   const [nameInput, setNameInput] = useState("");
   const [dateInput, setDateInput] = useState("");
 
+  const saveDraft = trpc.forms.saveDraft.useMutation();
+  const submitForm = trpc.forms.submit.useMutation();
+
   useEffect(() => {
-    const saved = localStorage.getItem("ac_employee_portal_v2");
+    const saved = localStorage.getItem("ac_employee_portal_v3");
     if (saved) {
       try {
         const data = JSON.parse(saved);
@@ -188,16 +480,16 @@ function EmployeePortalContent() {
   useEffect(() => {
     if (employeeName) {
       const t = setTimeout(() => {
-        localStorage.setItem("ac_employee_portal_v2", JSON.stringify({ employeeName, startDate, formValues, chapters }));
+        localStorage.setItem("ac_employee_portal_v3", JSON.stringify({ employeeName, startDate, formValues, chapters }));
         setLastSaved(new Date());
       }, 1000);
       return () => clearTimeout(t);
     }
   }, [employeeName, startDate, formValues, chapters]);
 
-  const completedChapters = chapters.filter(c => c.status === "complete").length;
-  const totalChapters = chapters.length;
-  const overallProgress = Math.round((completedChapters / totalChapters) * 100);
+  const completedChapters = chapters.filter(c => c.status === "complete" || c.status === "submitted").length;
+  const totalChapters = chapters.filter(c => c.formType !== null).length;
+  const overallProgress = totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
 
   const handleWelcomeSubmit = () => {
     if (!nameInput.trim()) return;
@@ -213,21 +505,51 @@ function EmployeePortalContent() {
     setCurrentScreen("form");
   };
 
-  const handleCompleteChapter = (chapterId: string) => {
-    setChapters(prev => {
-      const updated = prev.map((c, i) => {
-        if (c.id === chapterId) return { ...c, status: "complete" as const };
-        const prevChapter = prev[i - 1];
-        if (prevChapter?.id === chapterId) return { ...c, status: "available" as const };
-        return c;
-      });
-      return updated;
-    });
-    setActiveChapterId(null);
-    setCurrentScreen("chapters");
+  const handleSaveDraft = useCallback(async (chapterId: string, values: Record<string, string>) => {
     const chapter = chapters.find(c => c.id === chapterId);
-    toast.success(`"${chapter?.title}" complete!`, { duration: 3000 });
-  };
+    if (!chapter?.formType) return;
+    try {
+      await saveDraft.mutateAsync({ formType: chapter.formType as any, formData: values });
+      toast.success("Draft saved", { duration: 2000 });
+    } catch {
+      // Silently fail — local storage still saves
+    }
+  }, [chapters, saveDraft]);
+
+  const handleCompleteChapter = useCallback(async (chapterId: string, values: Record<string, string>) => {
+    const chapter = chapters.find(c => c.id === chapterId);
+    if (!chapter?.formType) {
+      // No form type (benefits) — just mark complete
+      setChapters(prev => {
+        return prev.map((c, i) => {
+          if (c.id === chapterId) return { ...c, status: "complete" as const };
+          const prevChapter = prev[i - 1];
+          if (prevChapter?.id === chapterId && c.status === "locked") return { ...c, status: "available" as const };
+          return c;
+        });
+      });
+      setActiveChapterId(null);
+      setCurrentScreen("chapters");
+      return;
+    }
+
+    try {
+      await submitForm.mutateAsync({ formType: chapter.formType as any, formData: values });
+      setChapters(prev => {
+        return prev.map((c, i) => {
+          if (c.id === chapterId) return { ...c, status: "submitted" as const };
+          const prevChapter = prev[i - 1];
+          if (prevChapter?.id === chapterId && c.status === "locked") return { ...c, status: "available" as const };
+          return c;
+        });
+      });
+      setActiveChapterId(null);
+      setCurrentScreen("chapters");
+      toast.success(`"${chapter.title}" submitted for review!`, { duration: 3500 });
+    } catch (err) {
+      toast.error("Failed to submit. Your draft has been saved locally — please try again.");
+    }
+  }, [chapters, submitForm]);
 
   const activeChapter = chapters.find(c => c.id === activeChapterId);
 
@@ -276,8 +598,9 @@ function EmployeePortalContent() {
             onFieldChange={(fieldId, value) => setFormValues(prev => ({
               ...prev, [activeChapter.id]: { ...(prev[activeChapter.id] || {}), [fieldId]: value }
             }))}
+            onSaveDraft={() => handleSaveDraft(activeChapter.id, formValues[activeChapter.id] || {})}
             onBack={() => { setActiveChapterId(null); setCurrentScreen("chapters"); }}
-            onComplete={() => handleCompleteChapter(activeChapter.id)} />
+            onComplete={(values) => handleCompleteChapter(activeChapter.id, values)} />
         )}
       </AnimatePresence>
     </div>
@@ -325,7 +648,7 @@ function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSub
             Before we begin
           </h2>
           <p className="text-sm mb-6" style={{ color: AC.fgMuted }}>
-            This portal guides you through onboarding step by step — about 45–60 minutes total. Save and return anytime.
+            This portal guides you through onboarding step by step. Save and return anytime.
           </p>
 
           <div className="space-y-4">
@@ -361,7 +684,7 @@ function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSub
 
           <div className="mt-4 flex items-start gap-2 text-xs" style={{ color: AC.fgSubtle }}>
             <Save className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-            <span>Progress saves automatically. Close this tab and return anytime — everything will be right where you left it.</span>
+            <span>Progress saves automatically. Close this tab and return anytime.</span>
           </div>
         </motion.div>
 
@@ -371,11 +694,11 @@ function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSub
           <h3 className="text-sm font-semibold mb-3" style={{ fontFamily: AC.heading, color: AC.fg }}>What to expect</h3>
           <div className="space-y-2.5">
             {[
-              ["📋", "6 short chapters — complete them in any order"],
-              ["⏱️", "About 45–60 minutes total, or do it in pieces"],
+              ["📋", "6 chapters — complete them in order"],
+              ["⏱️", "About 60–90 minutes total, or do it in pieces"],
               ["💾", "Auto-saves as you go — no lost progress"],
               ["🔒", "Your information is secure and encrypted"],
-              ["❓", "Help text on every sensitive field"],
+              ["✅", "Each chapter goes to your manager for approval"],
             ].map(([icon, text], i) => (
               <div key={i} className="flex items-start gap-2.5 text-sm" style={{ color: AC.fgMuted }}>
                 <span className="text-base flex-shrink-0">{icon}</span>
@@ -395,7 +718,7 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
   completedChapters: number; totalChapters: number; onStartChapter: (id: string) => void;
 }) {
   const firstName = employeeName.split(" ")[0];
-  const allComplete = completedChapters === totalChapters;
+  const allComplete = completedChapters === totalChapters && totalChapters > 0;
 
   return (
     <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}
@@ -412,7 +735,7 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
             ? "Your onboarding paperwork is complete. We can't wait to see you on your first day!"
             : startDate
             ? `Your first day is ${new Date(startDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}. Let's get everything ready.`
-            : "Work through each chapter below at your own pace."}
+            : "Work through each chapter below in order."}
         </p>
       </div>
 
@@ -422,14 +745,14 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
           <div key={chapter.id} className="flex items-center gap-1 flex-shrink-0">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all"
               style={{
-                backgroundColor: chapter.status === "complete" ? AC.teal :
+                backgroundColor: chapter.status === "complete" || chapter.status === "submitted" ? AC.teal :
                   chapter.status === "in-progress" ? chapter.accentColor :
                   chapter.status === "available" ? AC.bgRaised : AC.bgCard,
-                color: chapter.status === "complete" || chapter.status === "in-progress" ? AC.bg : AC.fgMuted,
+                color: chapter.status === "complete" || chapter.status === "submitted" || chapter.status === "in-progress" ? AC.bg : AC.fgMuted,
                 border: chapter.status === "available" ? `1.5px solid ${chapter.accentColor}` : `1px solid ${AC.border}`,
               }}
               title={chapter.title}>
-              {chapter.status === "complete" ? "✓" : chapter.number}
+              {chapter.status === "complete" || chapter.status === "submitted" ? "✓" : chapter.number}
             </div>
             {i < chapters.length - 1 && (
               <div className="w-5 h-px flex-shrink-0"
@@ -455,8 +778,7 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
           Questions? Contact HR at{" "}
           <a href="mailto:hr@apartmentcorp.com" className="underline font-medium" style={{ color: AC.teal }}>
             hr@apartmentcorp.com
-          </a>{" "}
-          or call <strong style={{ color: AC.fg }}>(555) 000-0000</strong>.
+          </a>
         </span>
       </div>
     </motion.div>
@@ -466,7 +788,8 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
 // ── Chapter Card ──────────────────────────────────────────────────────────────
 function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: number; onStart: (id: string) => void }) {
   const isLocked = chapter.status === "locked";
-  const isComplete = chapter.status === "complete";
+  const isComplete = chapter.status === "complete" || chapter.status === "submitted";
+  const isSubmitted = chapter.status === "submitted";
   const isAvailable = chapter.status === "available" || chapter.status === "in-progress";
 
   return (
@@ -474,7 +797,7 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
       transition={{ delay: index * 0.06, duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
       className="rounded-xl border overflow-hidden transition-all"
       style={{
-        backgroundColor: isLocked ? AC.bgCard : AC.bgCard,
+        backgroundColor: AC.bgCard,
         borderColor: isComplete ? AC.teal + "44" : isAvailable ? chapter.accentColor + "44" : AC.border,
         opacity: isLocked ? 0.6 : 1,
       }}>
@@ -495,7 +818,7 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
             {isComplete ? (
               <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
                 style={{ backgroundColor: AC.teal + "18", color: AC.teal }}>
-                <CheckCircle2 className="w-3.5 h-3.5" /> Complete
+                <CheckCircle2 className="w-3.5 h-3.5" /> {isSubmitted ? "Submitted" : "Complete"}
               </span>
             ) : isLocked ? (
               <span className="text-xs px-2.5 py-1 rounded-full flex-shrink-0"
@@ -533,24 +856,35 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
 }
 
 // ── Form Screen ───────────────────────────────────────────────────────────────
-function FormScreen({ chapter, formValues, onFieldChange, onBack, onComplete }: {
+function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, onComplete }: {
   chapter: Chapter; formValues: Record<string, string>;
   onFieldChange: (fieldId: string, value: string) => void;
-  onBack: () => void; onComplete: () => void;
+  onSaveDraft: () => void;
+  onBack: () => void;
+  onComplete: (values: Record<string, string>) => void;
 }) {
   const [showCompleteOverlay, setShowCompleteOverlay] = useState(false);
+  const [localValues, setLocalValues] = useState<Record<string, string>>(formValues);
+
+  const handleFieldChange = (fieldId: string, value: string) => {
+    setLocalValues(prev => ({ ...prev, [fieldId]: value }));
+    onFieldChange(fieldId, value);
+  };
 
   const allRequiredFilled = chapter.forms.every(group =>
-    group.fields.filter(f => f.required).every(f => (formValues[f.id] || "").trim() !== "")
+    group.fields.filter(f => f.required).every(f => (localValues[f.id] || "").trim() !== "")
   );
 
   const handleComplete = () => {
     if (chapter.forms.length === 0) {
-      toast.info("This section will be available once your forms are uploaded.");
+      toast.info("This section will be available once configured by HR.");
       return;
     }
     setShowCompleteOverlay(true);
-    setTimeout(() => { setShowCompleteOverlay(false); onComplete(); }, 2200);
+    setTimeout(() => {
+      setShowCompleteOverlay(false);
+      onComplete(localValues);
+    }, 2200);
   };
 
   return (
@@ -583,10 +917,12 @@ function FormScreen({ chapter, formValues, onFieldChange, onBack, onComplete }: 
           style={{ borderColor: AC.border, backgroundColor: AC.bgCard }}>
           <div className="text-4xl mb-3">📄</div>
           <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: AC.heading, color: AC.fg }}>
-            Forms coming soon
+            {chapter.id === "maintenance_test" ? "Maintenance Test — Coming Soon" : "Forms Coming Soon"}
           </h3>
           <p className="text-sm" style={{ color: AC.fgMuted }}>
-            The forms for this chapter are being prepared. HR will notify you when they're ready.
+            {chapter.id === "maintenance_test"
+              ? "Your maintenance skills assessment will be available once your position is confirmed by HR."
+              : "The forms for this chapter are being prepared. HR will notify you when they're ready."}
           </p>
           <button onClick={onBack} className="mt-5 px-5 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97]"
             style={{ backgroundColor: AC.teal, color: AC.bg }}>
@@ -607,8 +943,8 @@ function FormScreen({ chapter, formValues, onFieldChange, onBack, onComplete }: 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {group.fields.map(field => (
                   <FormField key={field.id} field={field}
-                    value={formValues[field.id] || ""}
-                    onChange={v => onFieldChange(field.id, v)}
+                    value={localValues[field.id] || ""}
+                    onChange={v => handleFieldChange(field.id, v)}
                     accentColor={chapter.accentColor} />
                 ))}
               </div>
@@ -616,13 +952,20 @@ function FormScreen({ chapter, formValues, onFieldChange, onBack, onComplete }: 
           ))}
 
           <div className="flex items-center justify-between gap-4 pt-2">
-            <p className="text-xs" style={{ color: AC.fgSubtle }}>
-              {allRequiredFilled ? "✓ All required fields are filled in" : "Fill in all required fields to continue"}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs" style={{ color: AC.fgSubtle }}>
+                {allRequiredFilled ? "✓ All required fields are filled in" : "Fill in all required fields to continue"}
+              </p>
+              <button onClick={onSaveDraft}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all active:scale-[0.97]"
+                style={{ backgroundColor: AC.bgRaised, color: AC.fgMuted, border: `1px solid ${AC.border}` }}>
+                <Save className="w-3 h-3" /> Save Draft
+              </button>
+            </div>
             <button onClick={handleComplete} disabled={!allRequiredFilled}
               className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
               style={{ backgroundColor: chapter.accentColor, color: AC.bg }}>
-              <Sparkles className="w-4 h-4" /> Complete Chapter
+              <Send className="w-4 h-4" /> Submit for Review
             </button>
           </div>
         </div>
@@ -637,11 +980,11 @@ function FormScreen({ chapter, formValues, onFieldChange, onBack, onComplete }: 
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
               className="text-center px-8">
               <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-6xl mb-4">✅</motion.div>
+                className="text-6xl mb-4">📤</motion.div>
               <h2 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: AC.heading }}>
-                Chapter Complete!
+                Submitted for Review!
               </h2>
-              <p className="text-base" style={{ color: AC.fgMuted }}>"{chapter.title}" — nicely done!</p>
+              <p className="text-base" style={{ color: AC.fgMuted }}>"{chapter.title}" — sent to your manager</p>
             </motion.div>
           </motion.div>
         )}
@@ -656,7 +999,7 @@ function FormField({ field, value, onChange, accentColor }: {
 }) {
   const [focused, setFocused] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const isFullWidth = field.type === "textarea" || field.id.includes("address1");
+  const isFullWidth = field.fullWidth || field.type === "textarea" || field.type === "checkbox" || field.type === "radio" || field.type === "signature";
 
   const inputStyle = {
     backgroundColor: AC.bgRaised,
@@ -671,11 +1014,11 @@ function FormField({ field, value, onChange, accentColor }: {
     <div className={isFullWidth ? "sm:col-span-2" : ""}>
       <div className="flex items-center justify-between mb-1.5">
         <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: AC.fgMuted }}>
-          {field.label}
-          {field.required && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+          {field.type !== "checkbox" && field.label}
+          {field.required && field.type !== "checkbox" && <span className="ml-1" style={{ color: accentColor }}>*</span>}
           {field.sensitive && <span className="ml-1.5 text-xs normal-case tracking-normal font-normal" style={{ color: AC.fgSubtle }}>🔒</span>}
         </label>
-        {field.helpText && (
+        {field.helpText && field.type !== "checkbox" && (
           <button onClick={() => setShowHelp(!showHelp)} className="text-xs flex items-center gap-0.5 transition-all"
             style={{ color: showHelp ? accentColor : AC.fgSubtle }}>
             <HelpCircle className="w-3.5 h-3.5" />
@@ -718,16 +1061,30 @@ function FormField({ field, value, onChange, accentColor }: {
           ))}
         </div>
       ) : field.type === "checkbox" ? (
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex items-start gap-3 mt-1">
           <button onClick={() => onChange(value === "true" ? "" : "true")}
-            className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0"
+            className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 mt-0.5"
             style={{ backgroundColor: value === "true" ? accentColor : "transparent", borderColor: value === "true" ? accentColor : AC.border }}>
             {value === "true" && <CheckCircle2 className="w-3 h-3" style={{ color: AC.bg }} />}
           </button>
-          <span className="text-sm" style={{ color: AC.fgMuted }}>{field.placeholder}</span>
+          <span className="text-sm leading-relaxed" style={{ color: AC.fgMuted }}>{field.placeholder}</span>
+        </div>
+      ) : field.type === "signature" ? (
+        <div>
+          <input type="text" value={value} onChange={e => onChange(e.target.value)}
+            onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+            placeholder="Type your full legal name"
+            className="w-full px-3 py-2.5 rounded-xl border text-sm transition-all"
+            style={{ ...inputStyle, fontStyle: "italic", fontSize: "1.05rem" }} />
+          {value && (
+            <p className="text-xs mt-1" style={{ color: AC.fgSubtle }}>
+              ✍️ Electronic signature: <em style={{ color: accentColor }}>{value}</em>
+            </p>
+          )}
         </div>
       ) : (
-        <input type={field.type === "ssn" ? "password" : field.type}
+        <input
+          type={field.type === "ssn" ? "password" : field.type === "number" ? "number" : field.type}
           value={value} onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           placeholder={field.placeholder}
