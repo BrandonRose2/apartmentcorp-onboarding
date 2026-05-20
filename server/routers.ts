@@ -23,6 +23,7 @@ import {
   upsertFormSubmission,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
+import { sendWelcomeEmail } from "./email";
 
 const NEW_HIRE_COOKIE = "nh_session";
 
@@ -112,6 +113,11 @@ export const appRouter = router({
         ctx.res.cookie(NEW_HIRE_COOKIE, encodeURIComponent(input.email.toLowerCase()), { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
         // Notify admin of new registration
         await notifyOwner({ title: "New Hire Registered", content: `${input.email} has registered on the onboarding portal.` });
+        // Send welcome email to new hire
+        const firstName = input.email.split("@")[0]?.split(".")[0] ?? "there";
+        const capitalizedName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+        const portalUrl = `${ctx.req.protocol}://${ctx.req.get ? ctx.req.get("host") : "aptonboard-pxsj4nvm.manus.space"}/onboarding`;
+        await sendWelcomeEmail({ toEmail: input.email.toLowerCase(), firstName: capitalizedName, portalUrl });
         return { success: true, email: input.email.toLowerCase() } as const;
       }),
 

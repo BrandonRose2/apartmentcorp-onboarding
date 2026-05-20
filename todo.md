@@ -37,5 +37,6 @@
 - [ ] New hire credentials page (platform logins after full approval)
 - [ ] Re-enable Property Files tab
 - [ ] Company Websites Information button next to Document Hub
-- [ ] Email delivery to regional managers / HR via Resend or SendGrid
+- [x] Resend email integration: welcome email from Welcome@onboarding.apartmentcorp.com, Reply-To Brandon@ApartmentCorp.com, CC brandon@apartmentcorp.com on new hire registration
+- [ ] Email delivery to regional managers / HR on form submission/approval
 - [ ] Useful Resources: Full packet available as downloadable PDF
