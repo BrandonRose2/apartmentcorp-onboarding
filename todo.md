@@ -40,3 +40,15 @@
 - [x] Resend email integration: welcome email from Welcome@onboarding.apartmentcorp.com, Reply-To Brandon@ApartmentCorp.com, CC brandon@apartmentcorp.com on new hire registration
 - [ ] Email delivery to regional managers / HR on form submission/approval
 - [ ] Useful Resources: Full packet available as downloadable PDF
+- [x] DB schema: new_hire_credentials table (new_hire_id, platform, username, password, notes, required)
+- [x] Backend: tRPC procedures for credentials (admin.getCredentials, admin.saveCredentials, credentials.getMyCredentials)
+- [x] Admin Dashboard: "Logins" button per new hire opens modal with platform checkboxes + username/password/notes fields
+- [x] New hire portal: MyLoginsScreen showing assigned platform credentials with masked passwords + reveal/copy
+- [x] "My Logins" button in ChaptersScreen
+- [x] Required form fields: neon orange outline when empty, neon green outline + checkmark when filled
+- [x] Employment application: "Position Applied For" dropdown (positions.list) and "Property/Location" dropdown (all buildings from DB)
+- [x] Approval flow: Applicant → Brandon → Robert → Ethan → Nicole → Marc (DB schema, backend, admin UI all updated)
+- [x] PropertyMAX Training Checklist: DB table (propertymax_training_progress with timestamp + signature)
+- [x] PropertyMAX Training Checklist: tRPC procedures (training.getMyProgress, training.markComplete, training.getProgressForNewHire)
+- [x] PropertyMAX Training Checklist: Employee portal page — 9 collapsible sections, checkbox per item, timestamp + e-signature on completion
+- [ ] PropertyMAX Training Checklist: Admin view — see each employee's completion status, timestamps, and signatures per item

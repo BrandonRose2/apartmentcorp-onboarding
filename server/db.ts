@@ -10,10 +10,13 @@ import {
   InsertNewHire,
   InsertUser,
   NewHire,
+  NewHireCredential,
   buildings,
   formApprovals,
   formSubmissions,
+  newHireCredentials,
   newHires,
+  propertyMaxTrainingProgress,
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -200,4 +203,111 @@ export async function getApprovalsByNewHire(newHireId: number): Promise<FormAppr
   const db = await getDb();
   if (!db) return [];
   return db.select().from(formApprovals).where(eq(formApprovals.newHireId, newHireId));
+}
+
+// ─── New Hire Credentials ───────────────────────────────────────────────────
+export async function getCredentialsByNewHire(newHireId: number): Promise<NewHireCredential[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(newHireCredentials).where(eq(newHireCredentials.newHireId, newHireId));
+}
+
+export async function upsertCredential(data: {
+  newHireId: number;
+  platform: string;
+  required: boolean;
+  username?: string | null;
+  password?: string | null;
+  notes?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db
+    .select()
+    .from(newHireCredentials)
+    .where(and(eq(newHireCredentials.newHireId, data.newHireId), eq(newHireCredentials.platform, data.platform)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db
+      .update(newHireCredentials)
+      .set({
+        required: data.required,
+        username: data.username ?? null,
+        password: data.password ?? null,
+        notes: data.notes ?? null,
+        updatedAt: new Date(),
+      })
+      .where(eq(newHireCredentials.id, existing[0].id));
+  } else {
+    await db.insert(newHireCredentials).values({
+      newHireId: data.newHireId,
+      platform: data.platform,
+      required: data.required,
+      username: data.username ?? null,
+      password: data.password ?? null,
+      notes: data.notes ?? null,
+    });
+  }
+}
+
+export async function deleteCredentialsByNewHire(newHireId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(newHireCredentials).where(eq(newHireCredentials.newHireId, newHireId));
+}
+
+// ─── PropertyMAX Training Checklist ──────────────────────────────────────────
+export async function getTrainingProgressByNewHire(newHireId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(propertyMaxTrainingProgress)
+    .where(eq(propertyMaxTrainingProgress.newHireId, newHireId));
+}
+
+export async function upsertTrainingProgress(data: {
+  newHireId: number;
+  itemId: string;
+  completed: boolean;
+  completedAt?: Date | null;
+  signature?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db
+    .select()
+    .from(propertyMaxTrainingProgress)
+    .where(
+      and(
+        eq(propertyMaxTrainingProgress.newHireId, data.newHireId),
+        eq(propertyMaxTrainingProgress.itemId, data.itemId)
+      )
+    )
+    .limit(1);
+  if (existing.length > 0) {
+    await db
+      .update(propertyMaxTrainingProgress)
+      .set({
+        completed: data.completed,
+        completedAt: data.completedAt ?? null,
+        signature: data.signature ?? null,
+        updatedAt: new Date(),
+      })
+      .where(eq(propertyMaxTrainingProgress.id, existing[0].id));
+  } else {
+    await db.insert(propertyMaxTrainingProgress).values({
+      newHireId: data.newHireId,
+      itemId: data.itemId,
+      completed: data.completed,
+      completedAt: data.completedAt ?? null,
+      signature: data.signature ?? null,
+    });
+  }
+}
+
+export async function getAllTrainingProgressForAdmin() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(propertyMaxTrainingProgress);
 }

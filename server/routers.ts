@@ -7,20 +7,26 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import {
   createFormApproval,
+  deleteCredentialsByNewHire,
   getAllBuildings,
   getAllNewHires,
   getAllSubmittedForms,
+  getAllTrainingProgressForAdmin,
   getApprovalsByNewHire,
   getBuildingById,
+  getCredentialsByNewHire,
   getDb,
   getFormSubmissionsByNewHire,
   getNewHireByEmail,
   getNewHireById,
+  getTrainingProgressByNewHire,
   seedBuildings,
   submitFormSubmission,
   updateFormSubmissionStatus,
   updateNewHireAssignment,
+  upsertCredential,
   upsertFormSubmission,
+  upsertTrainingProgress,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
 import { sendWelcomeEmail } from "./email";
@@ -152,7 +158,26 @@ export const appRouter = router({
     }),
   }),
 
-  // ─── Buildings ──────────────────────────────────────────────────────────────
+  // ─── Positions ─────────────────────────────────────────────────────────────────
+  positions: router({
+    list: publicProcedure.query(() => [
+      "Property Manager",
+      "Assistant Property Manager",
+      "Leasing Agent / Leasing Consultant",
+      "Leasing Manager",
+      "Maintenance Technician",
+      "Maintenance Supervisor",
+      "Groundskeeper / Landscaper",
+      "Housekeeper / Janitorial",
+      "Resident Services Coordinator",
+      "Administrative Assistant",
+      "Bookkeeper / Accounting Clerk",
+      "Regional Manager",
+      "Other",
+    ]),
+  }),
+
+  // ─── Buildings ──────────────────────────────────────────────────────────────────
   buildings: router({
     list: publicProcedure.query(async () => {
       await seedBuildings(BUILDINGS_SEED);
@@ -169,9 +194,13 @@ export const appRouter = router({
       .input(z.object({
         formType: z.enum(["employment_application", "confidentiality_agreement", "tracking_agreement", "policies_acknowledgment", "direct_deposit", "w4", "it2104", "i9", "maintenance_test"]),
         formData: z.record(z.string(), z.unknown()),
+        // email fallback: used when cookie is not available (e.g. cross-domain)
+        email: z.string().email().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        let hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        // Fallback: if cookie not found but email provided, look up by email
+        if (!hire && input.email) hire = await getNewHireByEmail(input.email);
         if (!hire) throw new Error("Not authenticated");
         const id = await upsertFormSubmission({ newHireId: hire.id, formType: input.formType, formData: input.formData, status: "draft" });
         return { success: true, id };
@@ -181,9 +210,13 @@ export const appRouter = router({
       .input(z.object({
         formType: z.enum(["employment_application", "confidentiality_agreement", "tracking_agreement", "policies_acknowledgment", "direct_deposit", "w4", "it2104", "i9", "maintenance_test"]),
         formData: z.record(z.string(), z.unknown()),
+        // email fallback: used when cookie is not available (e.g. cross-domain)
+        email: z.string().email().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        let hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        // Fallback: if cookie not found but email provided, look up by email
+        if (!hire && input.email) hire = await getNewHireByEmail(input.email);
         if (!hire) throw new Error("Not authenticated");
         const id = await upsertFormSubmission({ newHireId: hire.id, formType: input.formType, formData: input.formData, status: "submitted" });
         await submitFormSubmission(id);
@@ -264,7 +297,7 @@ export const appRouter = router({
         return { hire, building, submissions: subs, approvals };
       }),
 
-    // Approve or reject a form submission
+    // Approve or reject a form submission — 5-step chain: Brandon → Robert → Ethan → Nicole → Marc
     reviewSubmission: publicProcedure
       .input(z.object({
         submissionId: z.number(),
@@ -272,13 +305,19 @@ export const appRouter = router({
         action: z.enum(["approved", "rejected"]),
         approverName: z.string(),
         approverEmail: z.string().email(),
-        approverRole: z.enum(["manager", "hr"]),
+        approverRole: z.enum(["brandon", "robert", "ethan", "nicole", "marc"]),
         notes: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const newStatus = input.approverRole === "manager"
-          ? (input.action === "approved" ? "manager_approved" : "manager_rejected")
-          : (input.action === "approved" ? "hr_approved" : "hr_rejected");
+        // Map approver role to the resulting status
+        const statusMap: Record<string, { approved: string; rejected: string }> = {
+          brandon: { approved: "brandon_approved", rejected: "brandon_rejected" },
+          robert:  { approved: "robert_approved",  rejected: "robert_rejected"  },
+          ethan:   { approved: "ethan_approved",   rejected: "ethan_rejected"   },
+          nicole:  { approved: "nicole_approved",  rejected: "nicole_rejected"  },
+          marc:    { approved: "marc_approved",    rejected: "marc_rejected"    },
+        };
+        const newStatus = statusMap[input.approverRole][input.action];
 
         await updateFormSubmissionStatus(input.submissionId, newStatus as any);
         await createFormApproval({
@@ -291,19 +330,34 @@ export const appRouter = router({
           notes: input.notes ?? null,
         });
 
-        // If manager approved, update new hire status
-        if (input.approverRole === "manager" && input.action === "approved") {
-          await updateNewHireAssignment(input.newHireId, { onboardingStatus: "manager_approved" });
+        // Update new hire's onboarding status to match
+        if (input.action === "approved") {
+          await updateNewHireAssignment(input.newHireId, { onboardingStatus: newStatus as any });
+          // Determine next approver for notification
+          const nextApproverMap: Record<string, string> = {
+            brandon: "Robert",
+            robert:  "Ethan",
+            ethan:   "Nicole",
+            nicole:  "Marc",
+          };
+          const nextApprover = nextApproverMap[input.approverRole];
+          if (nextApprover) {
+            await notifyOwner({
+              title: `${input.approverName} Approved — Awaiting ${nextApprover}`,
+              content: `Submission #${input.submissionId} approved by ${input.approverName}. Next step: ${nextApprover}'s review.`,
+            });
+          } else {
+            // Marc is the final approver
+            await notifyOwner({
+              title: "New Hire Fully Onboarded ✓",
+              content: `New hire #${input.newHireId} has been fully approved by ${input.approverName} (Marc). Onboarding complete!`,
+            });
+          }
+        } else {
+          await updateNewHireAssignment(input.newHireId, { onboardingStatus: "rejected" });
           await notifyOwner({
-            title: "Manager Approved Submission",
-            content: `Submission #${input.submissionId} approved by ${input.approverName}. Ready for HR review.`,
-          });
-        }
-        if (input.approverRole === "hr" && input.action === "approved") {
-          await updateNewHireAssignment(input.newHireId, { onboardingStatus: "hr_approved" });
-          await notifyOwner({
-            title: "New Hire Fully Onboarded",
-            content: `New hire #${input.newHireId} has been fully approved by HR and is now onboarded.`,
+            title: `Submission Rejected by ${input.approverName}`,
+            content: `Submission #${input.submissionId} was rejected by ${input.approverName}. Notes: ${input.notes ?? "none"}.`,
           });
         }
 
@@ -314,11 +368,111 @@ export const appRouter = router({
     updateStatus: publicProcedure
       .input(z.object({
         newHireId: z.number(),
-        status: z.enum(["pending", "in_progress", "submitted", "manager_approved", "hr_approved", "rejected"]),
+        status: z.enum(["pending", "in_progress", "submitted", "brandon_approved", "robert_approved", "ethan_approved", "nicole_approved", "marc_approved", "rejected"]),
       }))
       .mutation(async ({ input }) => {
         await updateNewHireAssignment(input.newHireId, { onboardingStatus: input.status });
         return { success: true };
+      }),
+
+    // Get credentials for a specific new hire (admin view)
+    getCredentials: publicProcedure
+      .input(z.object({ newHireId: z.number() }))
+      .query(async ({ input }) => getCredentialsByNewHire(input.newHireId)),
+
+    // Save credentials for a new hire (admin sets required platforms + login info)
+    saveCredentials: publicProcedure
+      .input(z.object({
+        newHireId: z.number(),
+        credentials: z.array(z.object({
+          platform: z.string(),
+          required: z.boolean(),
+          username: z.string().optional().nullable(),
+          password: z.string().optional().nullable(),
+          notes: z.string().optional().nullable(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        for (const cred of input.credentials) {
+          await upsertCredential({
+            newHireId: input.newHireId,
+            platform: cred.platform,
+            required: cred.required,
+            username: cred.username ?? null,
+            password: cred.password ?? null,
+            notes: cred.notes ?? null,
+          });
+        }
+        return { success: true };
+      }),
+  }),
+
+  // ─── New Hire Credentials (portal-side) ─────────────────────────────────────
+  credentials: router({
+    // New hire fetches their own assigned credentials
+    getMyCredentials: publicProcedure.query(async ({ ctx }) => {
+      const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+      if (!hire) return [];
+      const all = await getCredentialsByNewHire(hire.id);
+      // Only return required credentials that have at least a username set
+      return all.filter(c => c.required);
+    }),
+  }),
+
+  // ─── PropertyMAX Training Checklist ─────────────────────────────────────────
+  training: router({
+    // New hire gets their own training progress
+    getMyProgress: publicProcedure.query(async ({ ctx }) => {
+      const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+      if (!hire) return [];
+      return getTrainingProgressByNewHire(hire.id);
+    }),
+
+    // New hire marks a training item complete with their signature
+    completeItem: publicProcedure
+      .input(z.object({
+        itemId: z.string(),
+        signature: z.string().min(1, "Signature is required"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        if (!hire) throw new Error("Not authenticated");
+        await upsertTrainingProgress({
+          newHireId: hire.id,
+          itemId: input.itemId,
+          completed: true,
+          completedAt: new Date(),
+          signature: input.signature,
+        });
+        return { success: true };
+      }),
+
+    // New hire unchecks a training item
+    uncompleteItem: publicProcedure
+      .input(z.object({ itemId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        if (!hire) throw new Error("Not authenticated");
+        await upsertTrainingProgress({
+          newHireId: hire.id,
+          itemId: input.itemId,
+          completed: false,
+          completedAt: null,
+          signature: null,
+        });
+        return { success: true };
+      }),
+
+    // Admin views all training progress
+    getAllProgress: publicProcedure.query(async () => {
+      return getAllTrainingProgressForAdmin();
+    }),
+
+    // Admin views training progress for a specific new hire
+    getProgressForNewHire: publicProcedure
+      .input(z.object({ newHireId: z.number() }))
+      .query(async ({ input }) => {
+        return getTrainingProgressByNewHire(input.newHireId);
       }),
   }),
 });

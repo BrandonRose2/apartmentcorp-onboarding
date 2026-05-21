@@ -22,6 +22,27 @@
       "when": 1779227891683,
       "tag": "0002_clammy_amazoness",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1779312922007,
+      "tag": "0003_supreme_skullbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1779321775609,
+      "tag": "0004_polite_marauders",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1779322148072,
+      "tag": "0005_steep_darwin",
+      "breakpoints": true
     }
   ]
 }
