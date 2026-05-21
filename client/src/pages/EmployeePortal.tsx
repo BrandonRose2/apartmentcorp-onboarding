@@ -6,10 +6,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ChevronRight, Clock, HelpCircle, Save, Sparkles, Send } from "lucide-react";
+import { CheckCircle2, ChevronRight, Clock, HelpCircle, Save, Sparkles, Send, KeyRound, BookOpen, Eye, EyeOff, Copy, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { NewHireAuth } from "@/components/NewHireAuth";
 import { trpc } from "@/lib/trpc";
+
 
 // ── Brand constants ───────────────────────────────────────────────────────────
 const AC = {
@@ -452,7 +453,7 @@ const CHAPTERS: Chapter[] = [
 function EmployeePortalContent() {
   const [employeeName, setEmployeeName] = useState("");
   const [startDate, setStartDate] = useState("");
-  const [currentScreen, setCurrentScreen] = useState<"welcome" | "chapters" | "form">("welcome");
+  const [currentScreen, setCurrentScreen] = useState<"welcome" | "chapters" | "form" | "logins" | "training">("welcome");
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>(CHAPTERS);
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({});
@@ -590,7 +591,15 @@ function EmployeePortalContent() {
         {currentScreen === "chapters" && (
           <ChaptersScreen key="chapters" employeeName={employeeName} startDate={startDate}
             chapters={chapters} completedChapters={completedChapters} totalChapters={totalChapters}
-            onStartChapter={handleStartChapter} />
+            onStartChapter={handleStartChapter}
+            onViewLogins={() => setCurrentScreen("logins")}
+            onViewTraining={() => setCurrentScreen("training")} />
+        )}
+        {currentScreen === "logins" && (
+          <MyLoginsScreen key="logins" onBack={() => setCurrentScreen("chapters")} />
+        )}
+        {currentScreen === "training" && (
+          <PropertyMaxTrainingPage key="training" onBack={() => setCurrentScreen("chapters")} />
         )}
         {currentScreen === "form" && activeChapter && (
           <FormScreen key={`form-${activeChapter.id}`} chapter={activeChapter}
@@ -713,9 +722,10 @@ function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSub
 }
 
 // ── Chapters Screen ───────────────────────────────────────────────────────────
-function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, totalChapters, onStartChapter }: {
+function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, totalChapters, onStartChapter, onViewLogins, onViewTraining }: {
   employeeName: string; startDate: string; chapters: Chapter[];
   completedChapters: number; totalChapters: number; onStartChapter: (id: string) => void;
+  onViewLogins: () => void; onViewTraining: () => void;
 }) {
   const firstName = employeeName.split(" ")[0];
   const allComplete = completedChapters === totalChapters && totalChapters > 0;
@@ -770,8 +780,34 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
         ))}
       </div>
 
+      {/* Quick Access Buttons */}
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onClick={onViewLogins}
+          className="flex items-center gap-3 p-4 rounded-xl border text-left transition-all active:scale-[0.97] hover:border-opacity-80"
+          style={{ backgroundColor: AC.bgCard, borderColor: AC.teal + "55", color: AC.fg }}>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: AC.teal + "18" }}>
+            <KeyRound className="w-4 h-4" style={{ color: AC.teal }} />
+          </div>
+          <div>
+            <div className="font-semibold text-sm" style={{ fontFamily: AC.heading }}>My Logins</div>
+            <div className="text-xs mt-0.5" style={{ color: AC.fgMuted }}>View your assigned platform credentials</div>
+          </div>
+        </button>
+        <button onClick={onViewTraining}
+          className="flex items-center gap-3 p-4 rounded-xl border text-left transition-all active:scale-[0.97] hover:border-opacity-80"
+          style={{ backgroundColor: AC.bgCard, borderColor: AC.tealDim + "55", color: AC.fg }}>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: AC.tealDim + "18" }}>
+            <BookOpen className="w-4 h-4" style={{ color: AC.tealDim }} />
+          </div>
+          <div>
+            <div className="font-semibold text-sm" style={{ fontFamily: AC.heading }}>PropertyMAX Training</div>
+            <div className="text-xs mt-0.5" style={{ color: AC.fgMuted }}>Interactive training checklist with sign-off</div>
+          </div>
+        </button>
+      </div>
+
       {/* Help */}
-      <div className="mt-8 flex items-start gap-3 p-4 rounded-xl text-sm"
+      <div className="mt-6 flex items-start gap-3 p-4 rounded-xl text-sm"
         style={{ backgroundColor: AC.bgCard, border: `1px solid ${AC.border}`, color: AC.fgMuted }}>
         <HelpCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: AC.teal }} />
         <span>
@@ -817,7 +853,7 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
             </div>
             {isComplete ? (
               <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-                style={{ backgroundColor: AC.teal + "18", color: AC.teal }}>
+              style={{ backgroundColor: AC.teal + "18", color: AC.teal }}>
                 <CheckCircle2 className="w-3.5 h-3.5" /> {isSubmitted ? "Submitted" : "Complete"}
               </span>
             ) : isLocked ? (
@@ -1090,6 +1126,303 @@ function FormField({ field, value, onChange, accentColor }: {
           placeholder={field.placeholder}
           className="w-full px-3 py-2.5 rounded-xl border text-sm transition-all"
           style={inputStyle} />
+      )}
+    </div>
+  );
+}
+
+// ── My Logins Screen ────────────────────────────────────────────────────────
+function MyLoginsScreen({ onBack }: { onBack: () => void }) {
+  const { data: credentials = [], isLoading } = trpc.credentials.getMyCredentials.useQuery();
+  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+
+  const toggleReveal = (id: number) => setRevealed(prev => ({ ...prev, [id]: !prev[id] }));
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => toast.success(`${label} copied`));
+  };
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: AC.bg, color: AC.fg, fontFamily: AC.body }}>
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm mb-6 hover:opacity-80 transition-opacity"
+          style={{ color: AC.fgMuted }}>
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+        <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: AC.heading, color: AC.fg }}>My Logins</h1>
+        <p className="text-sm mb-6" style={{ color: AC.fgMuted }}>Your assigned platform credentials. Keep these secure.</p>
+
+        {isLoading && (
+          <div className="text-center py-12" style={{ color: AC.fgMuted }}>Loading credentials...</div>
+        )}
+        {!isLoading && credentials.length === 0 && (
+          <div className="text-center py-12 rounded-2xl border" style={{ borderColor: AC.border, color: AC.fgMuted }}>
+            <KeyRound className="w-10 h-10 mx-auto mb-3 opacity-40" />
+            <p className="font-medium">No credentials assigned yet</p>
+            <p className="text-xs mt-1">Your IT administrator will assign your platform logins soon.</p>
+          </div>
+        )}
+        <div className="flex flex-col gap-3">
+          {credentials.map(cred => (
+            <div key={cred.id} className="rounded-2xl border p-4" style={{ backgroundColor: AC.bgCard, borderColor: AC.border }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-sm" style={{ color: AC.fg }}>{cred.platform}</span>
+                {cred.required && (
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: AC.teal + "20", color: AC.teal }}>Required</span>
+                )}
+              </div>
+              {cred.username && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs" style={{ color: AC.fgMuted }}>Username</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono" style={{ color: AC.fg }}>{cred.username}</span>
+                    <button onClick={() => copyToClipboard(cred.username!, "Username")}
+                      className="p-1 rounded hover:opacity-70 transition-opacity">
+                      <Copy className="w-3.5 h-3.5" style={{ color: AC.fgMuted }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+              {cred.password && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs" style={{ color: AC.fgMuted }}>Password</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono" style={{ color: AC.fg }}>
+                      {revealed[cred.id] ? cred.password : "••••••••"}
+                    </span>
+                    <button onClick={() => toggleReveal(cred.id)}
+                      className="p-1 rounded hover:opacity-70 transition-opacity">
+                      {revealed[cred.id]
+                        ? <EyeOff className="w-3.5 h-3.5" style={{ color: AC.fgMuted }} />
+                        : <Eye className="w-3.5 h-3.5" style={{ color: AC.fgMuted }} />}
+                    </button>
+                    <button onClick={() => copyToClipboard(cred.password!, "Password")}
+                      className="p-1 rounded hover:opacity-70 transition-opacity">
+                      <Copy className="w-3.5 h-3.5" style={{ color: AC.fgMuted }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+              {cred.notes && (
+                <p className="text-xs mt-3 pt-3 border-t" style={{ borderColor: AC.border, color: AC.fgMuted }}>{cred.notes}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PropertyMAX Training Page ─────────────────────────────────────────────────
+const TRAINING_SECTIONS = [
+  {
+    id: "dashboard",
+    title: "1. Dashboard & Overview",
+    items: [
+      { id: "dash-1", label: "Navigate the main dashboard" },
+      { id: "dash-2", label: "Understand key metrics and KPIs" },
+      { id: "dash-3", label: "Customize dashboard widgets" },
+    ],
+  },
+  {
+    id: "requests",
+    title: "2. Requests",
+    items: [
+      { id: "req-1", label: "Create a new maintenance request" },
+      { id: "req-2", label: "Assign and track open requests" },
+      { id: "req-3", label: "Close and document completed requests" },
+      { id: "req-4", label: "Use request filters and search" },
+    ],
+  },
+  {
+    id: "narratives",
+    title: "3. Narratives",
+    items: [
+      { id: "narr-1", label: "Create a property narrative" },
+      { id: "narr-2", label: "Edit and update existing narratives" },
+      { id: "narr-3", label: "Review narrative history" },
+    ],
+  },
+  {
+    id: "manuals",
+    title: "4. Manuals",
+    items: [
+      { id: "man-1", label: "Browse the manuals library" },
+      { id: "man-2", label: "Upload a new manual" },
+      { id: "man-3", label: "Search and retrieve manuals" },
+    ],
+  },
+  {
+    id: "reports",
+    title: "5. Reports",
+    items: [
+      { id: "rep-1", label: "Generate a property report" },
+      { id: "rep-2", label: "Export reports to PDF/Excel" },
+      { id: "rep-3", label: "Schedule automated reports" },
+    ],
+  },
+  {
+    id: "timeoff",
+    title: "6. Time Off",
+    items: [
+      { id: "to-1", label: "Submit a time off request" },
+      { id: "to-2", label: "View time off balance" },
+      { id: "to-3", label: "Review team time off calendar" },
+    ],
+  },
+  {
+    id: "profile",
+    title: "7. My Profile",
+    items: [
+      { id: "prof-1", label: "Update personal information" },
+      { id: "prof-2", label: "Change notification preferences" },
+      { id: "prof-3", label: "Set up two-factor authentication" },
+    ],
+  },
+  {
+    id: "admin",
+    title: "8. Admin Settings",
+    items: [
+      { id: "adm-1", label: "Manage user roles and permissions" },
+      { id: "adm-2", label: "Configure property settings" },
+      { id: "adm-3", label: "Review audit logs" },
+    ],
+  },
+  {
+    id: "integrations",
+    title: "9. Integrations & Quick Access",
+    items: [
+      { id: "int-1", label: "Connect Yardi integration" },
+      { id: "int-2", label: "Set up AppWork sync" },
+      { id: "int-3", label: "Configure Connecteam link" },
+      { id: "int-4", label: "Test all quick-access shortcuts" },
+    ],
+  },
+];
+
+function PropertyMaxTrainingPage({ onBack }: { onBack: () => void }) {
+  const { data: progress = [], isLoading, refetch } = trpc.training.getMyProgress.useQuery();
+  const markComplete = trpc.training.markComplete.useMutation({ onSuccess: () => refetch() });
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ dashboard: true });
+  const [sigModal, setSigModal] = useState<{ section: string; itemId: string; itemLabel: string } | null>(null);
+  const [sigValue, setSigValue] = useState("");
+
+  const completedIds = new Set(progress.map(p => p.itemId));
+  const totalItems = TRAINING_SECTIONS.reduce((acc, s) => acc + s.items.length, 0);
+  const completedCount = completedIds.size;
+
+  const handleCheck = (section: string, itemId: string, itemLabel: string, checked: boolean) => {
+    if (!checked) return; // only allow checking, not unchecking
+    setSigModal({ section, itemId, itemLabel });
+    setSigValue("");
+  };
+
+  const handleSignAndComplete = () => {
+    if (!sigModal || sigValue.trim().length < 2) return;
+    markComplete.mutate({ ...sigModal, signature: sigValue.trim() });
+    setSigModal(null);
+    setSigValue("");
+  };
+
+  const toggleSection = (id: string) => setOpenSections(prev => ({ ...prev, [id]: !prev[id] }));
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: AC.bg, color: AC.fg, fontFamily: AC.body }}>
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm mb-6 hover:opacity-80 transition-opacity"
+          style={{ color: AC.fgMuted }}>
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+        <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: AC.heading, color: AC.fg }}>PropertyMAX Training</h1>
+        <p className="text-sm mb-2" style={{ color: AC.fgMuted }}>Check off each item as you complete it. Your signature and timestamp are recorded.</p>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: AC.bgRaised }}>
+            <div className="h-full rounded-full transition-all" style={{ width: `${(completedCount / totalItems) * 100}%`, backgroundColor: AC.teal }} />
+          </div>
+          <span className="text-xs font-medium" style={{ color: AC.tealDim }}>{completedCount}/{totalItems} completed</span>
+        </div>
+
+        {isLoading && <div className="text-center py-12" style={{ color: AC.fgMuted }}>Loading...</div>}
+
+        <div className="flex flex-col gap-3">
+          {TRAINING_SECTIONS.map(section => {
+            const sectionCompleted = section.items.filter(i => completedIds.has(i.id)).length;
+            const isOpen = openSections[section.id];
+            return (
+              <div key={section.id} className="rounded-2xl border overflow-hidden" style={{ backgroundColor: AC.bgCard, borderColor: AC.border }}>
+                <button onClick={() => toggleSection(section.id)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:opacity-80 transition-opacity">
+                  <span className="font-semibold text-sm" style={{ color: AC.fg }}>{section.title}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: sectionCompleted === section.items.length ? AC.teal : AC.fgMuted }}>
+                      {sectionCompleted}/{section.items.length}
+                    </span>
+                    <ChevronRight className="w-4 h-4 transition-transform" style={{ color: AC.fgMuted, transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }} />
+                  </div>
+                </button>
+                {isOpen && (
+                  <div className="border-t" style={{ borderColor: AC.border }}>
+                    {section.items.map(item => {
+                      const done = completedIds.has(item.id);
+                      const prog = progress.find(p => p.itemId === item.id);
+                      return (
+                        <div key={item.id} className="flex items-start gap-3 px-4 py-3 border-b last:border-b-0"
+                          style={{ borderColor: AC.border }}>
+                          <input type="checkbox" checked={done} onChange={e => handleCheck(section.id, item.id, item.label, e.target.checked)}
+                            disabled={done}
+                            className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
+                            style={{ accentColor: AC.teal }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm" style={{ color: done ? AC.fgMuted : AC.fg, textDecoration: done ? "line-through" : "none" }}>{item.label}</p>
+                            {done && prog && (
+                              <p className="text-xs mt-0.5" style={{ color: AC.fgSubtle }}>
+                                ✓ {prog.signature} · {new Date(prog.completedAt).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Signature Modal */}
+      {sigModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.7)" }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: AC.bgCard, border: `1px solid ${AC.borderStrong}` }}>
+            <h3 className="font-bold text-base mb-1" style={{ fontFamily: AC.heading, color: AC.fg }}>Sign Off</h3>
+            <p className="text-xs mb-4" style={{ color: AC.fgMuted }}>Type your full name to confirm you completed:</p>
+            <p className="text-sm font-medium mb-4 p-3 rounded-xl" style={{ backgroundColor: AC.bgRaised, color: AC.fg }}>{sigModal.itemLabel}</p>
+            <input
+              type="text"
+              value={sigValue}
+              onChange={e => setSigValue(e.target.value)}
+              placeholder="Your full name"
+              className="w-full px-3 py-2.5 rounded-xl border text-sm mb-4"
+              style={{ backgroundColor: AC.bgRaised, borderColor: AC.borderStrong, color: AC.fg }}
+              onKeyDown={e => e.key === "Enter" && handleSignAndComplete()}
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button onClick={() => setSigModal(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                style={{ backgroundColor: AC.bgRaised, color: AC.fgMuted }}>
+                Cancel
+              </button>
+              <button onClick={handleSignAndComplete}
+                disabled={sigValue.trim().length < 2 || markComplete.isPending}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity disabled:opacity-40"
+                style={{ backgroundColor: AC.teal, color: AC.bg }}>
+                {markComplete.isPending ? "Saving..." : "Sign & Complete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

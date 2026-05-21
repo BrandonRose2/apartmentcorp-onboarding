@@ -29,6 +29,13 @@
       "when": 1779312922007,
       "tag": "0003_supreme_skullbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1779402718391,
+      "tag": "0004_chief_nick_fury",
+      "breakpoints": true
     }
   ]
 }

@@ -141,3 +141,18 @@ export const newHireCredentials = mysqlTable("new_hire_credentials", {
 
 export type NewHireCredential = typeof newHireCredentials.$inferSelect;
 export type InsertNewHireCredential = typeof newHireCredentials.$inferInsert;
+
+// ── PropertyMAX Training Progress ────────────────────────────────────────────
+export const propertyMaxTrainingProgress = mysqlTable("propertymax_training_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  newHireId: int("newHireId").notNull(),
+  section: varchar("section", { length: 128 }).notNull(),
+  itemId: varchar("itemId", { length: 128 }).notNull(),
+  itemLabel: text("itemLabel").notNull(),
+  completedAt: timestamp("completedAt").notNull(),
+  signature: varchar("signature", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PropertyMaxTrainingProgressRow = typeof propertyMaxTrainingProgress.$inferSelect;
+export type InsertPropertyMaxTrainingProgress = typeof propertyMaxTrainingProgress.$inferInsert;

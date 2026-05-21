@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `propertymax_training_progress` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `newHireId` int NOT NULL,\n  `section` varchar(128) NOT NULL,\n  `itemId` varchar(128) NOT NULL,\n  `itemLabel` text NOT NULL,\n  `completedAt` timestamp NOT NULL,\n  `signature` varchar(255) NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `propertymax_training_progress_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute CREATE TABLE IF NOT EXISTS `propertymax_training_progress` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `newHireId` int NOT NULL,\n  `section` varchar(128) NOT NULL,\n  `itemId` varchar(128) NOT NULL,\n  `itemLabel` text NOT NULL,\n  `completedAt` timestamp NOT NULL,\n  `signature` varchar(255) NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `propertymax_training_progress_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 282
+}

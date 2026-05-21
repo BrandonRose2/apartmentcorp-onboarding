@@ -40,8 +40,21 @@
 - [x] Resend email integration: welcome email from Welcome@onboarding.apartmentcorp.com, Reply-To Brandon@ApartmentCorp.com, CC brandon@apartmentcorp.com on new hire registration
 - [ ] Email delivery to regional managers / HR on form submission/approval
 - [ ] Useful Resources: Full packet available as downloadable PDF
-- [ ] DB schema: new_hire_credentials table (new_hire_id, platform, username, password, notes, required)
-- [ ] Backend: tRPC procedures for credentials (setCredentials, getCredentials for admin; getMyCredentials for new hire)
-- [ ] Admin Dashboard: Credentials tab per new hire — checkboxes for required platforms, username/password fields
-- [ ] New hire portal: "My Logins" tab showing assigned platform credentials with masked passwords
+- [x] DB schema: new_hire_credentials table (new_hire_id, platform, username, password, notes, required)
+- [x] Backend: tRPC procedures for credentials (admin.getCredentials, admin.saveCredentials, credentials.getMyCredentials)
+- [x] Admin Dashboard: "Logins" modal per new hire with platform checkboxes + username/password/notes fields
+- [x] New hire portal: MyLoginsScreen with masked passwords + reveal/copy
 - [ ] Fix new hire login flow: returning employees can log in with email + passcode on any device (no cookie dependency)
+- [x] Employment application: "Position Applied For" dropdown (positions.list) and "Property/Location" dropdown (all buildings from DB)
+- [x] Approval flow: Applicant → Brandon → Robert → Ethan → Nicole → Marc (DB schema, backend, admin UI all updated)
+- [x] PropertyMAX Training Checklist: DB table (propertymax_training_progress with timestamp + signature)
+- [x] PropertyMAX Training Checklist: tRPC procedures (training.getMyProgress, training.markComplete, training.getProgressForNewHire)
+- [x] PropertyMAX Training Checklist: Employee portal page — 9 collapsible sections, checkbox per item, timestamp + e-signature on completion
+- [x] PropertyMAX Training Checklist: Admin can query per-employee progress via training.getProgressForNewHire
+- [x] My Logins screen in employee portal (MyLoginsScreen with reveal/copy)
+- [x] PropertyMAX Training button in ChaptersScreen
+- [x] Required form fields: neon orange outline when empty, neon green + checkmark when filled
+- [x] Form submission bug fix: email fallback auth so forms save correctly on published site
+- [x] Slack removed from all platform lists and onboarding checklist
+- [x] IT & Equipment category added to Company Websites & Logins tab
+- [x] VMware Horizon (Virtual Desktop) added to IT & Equipment with serial number field

@@ -1,10 +1,11 @@
 import { COOKIE_NAME } from "@shared/const";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { buildings, formApprovals, formSubmissions, newHires } from "../drizzle/schema";
+import { buildings, formApprovals, formSubmissions, newHires, propertyMaxTrainingProgress } from "../drizzle/schema";
+import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   createFormApproval,
   deleteCredentialsByNewHire,
@@ -366,6 +367,60 @@ export const appRouter = router({
       // Only return required credentials that have at least a username set
       return all.filter(c => c.required);
     }),
+  }),
+
+  // ─── PropertyMAX Training Checklist ──────────────────────────────────────────
+  training: router({
+    // Get all completed items for the current new hire
+    getMyProgress: publicProcedure.query(async ({ ctx }) => {
+      const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+      if (!hire) return [];
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(propertyMaxTrainingProgress)
+        .where(eq(propertyMaxTrainingProgress.newHireId, hire.id));
+    }),
+
+    // Mark a training item as complete with timestamp + signature
+    markComplete: publicProcedure
+      .input(z.object({
+        section: z.string(),
+        itemId: z.string(),
+        itemLabel: z.string(),
+        signature: z.string().min(2, "Signature required"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        if (!hire) throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        // Upsert: delete existing then insert fresh
+        await db.delete(propertyMaxTrainingProgress)
+          .where(and(
+            eq(propertyMaxTrainingProgress.newHireId, hire.id),
+            eq(propertyMaxTrainingProgress.itemId, input.itemId),
+          ));
+        await db.insert(propertyMaxTrainingProgress).values({
+          newHireId: hire.id,
+          section: input.section,
+          itemId: input.itemId,
+          itemLabel: input.itemLabel,
+          completedAt: new Date(),
+          signature: input.signature,
+        });
+        return { success: true };
+      }),
+
+    // Admin: get all training progress for a specific new hire
+    getProgressForNewHire: publicProcedure
+      .input(z.object({ newHireId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db.select().from(propertyMaxTrainingProgress)
+          .where(eq(propertyMaxTrainingProgress.newHireId, input.newHireId))
+          .orderBy(propertyMaxTrainingProgress.completedAt);
+      }),
   }),
 });
 
