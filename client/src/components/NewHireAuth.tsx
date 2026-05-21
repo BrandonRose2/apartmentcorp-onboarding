@@ -23,7 +23,7 @@ const AC = {
   body:     "'Inter', 'Helvetica Neue', Arial, sans-serif",
 };
 
-type AuthStep = "checking" | "register" | "login" | "authenticated";
+type AuthStep = "checking" | "register" | "login" | "login-email" | "authenticated";
 
 interface Props {
   children: React.ReactNode;
@@ -50,16 +50,22 @@ export function NewHireAuth({ children }: Props) {
   useEffect(() => {
     if (isLoading) return;
     if (session?.registered) {
+      // Cookie session found — go straight to passcode numpad
       setRegisteredEmail(session.email);
       setStep("login");
     } else {
+      // No cookie — show email entry first (new device or cleared cookies)
+      // The user can choose to register or log back in
       setStep("register");
     }
   }, [session, isLoading]);
 
   // ── Registration flow ──────────────────────────────────────────────────────
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const checkEmailMutation = trpc.newHire.checkEmailExists.useMutation();
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
     if (!trimmed.includes("@")) {
@@ -67,9 +73,23 @@ export function NewHireAuth({ children }: Props) {
       return;
     }
     setEmailError("");
-    setPasscode("");
-    setConfirmingPasscode(false);
-    setRegisteredEmail(trimmed);
+    setIsCheckingEmail(true);
+    try {
+      const result = await checkEmailMutation.mutateAsync({ email: trimmed });
+      setRegisteredEmail(trimmed);
+      if (result.exists) {
+        // Returning user on new device — go to email+passcode login
+        setStep("login-email");
+      } else {
+        // New user — go to passcode creation
+        setPasscode("");
+        setConfirmingPasscode(false);
+      }
+    } catch {
+      setEmailError("Unable to verify email. Please try again.");
+    } finally {
+      setIsCheckingEmail(false);
+    }
   };
 
   const handleRegisterDigit = useCallback((digit: string) => {
@@ -146,7 +166,11 @@ export function NewHireAuth({ children }: Props) {
 
   const submitLogin = async (code: string) => {
     try {
-      const result = await loginMutation.mutateAsync({ passcode: code });
+      // Pass email for device-independent login (no cookie needed)
+      const result = await loginMutation.mutateAsync({
+        passcode: code,
+        email: registeredEmail ?? undefined,
+      });
       if (result.success) {
         setRegisteredEmail(result.email);
         setStep("authenticated");
@@ -168,7 +192,8 @@ export function NewHireAuth({ children }: Props) {
   useEffect(() => {
     const isOnPinScreen =
       (step === "register" && registeredEmail !== null) ||
-      step === "login";
+      step === "login" ||
+      step === "login-email";
 
     if (!isOnPinScreen) return;
 
@@ -177,13 +202,13 @@ export function NewHireAuth({ children }: Props) {
       if (emailFocused.current) return;
 
       if (/^[0-9]$/.test(e.key)) {
-        if (step === "login") {
+        if (step === "login" || step === "login-email") {
           handleLoginDigit(e.key);
         } else {
           handleRegisterDigit(e.key);
         }
       } else if (e.key === "Backspace") {
-        if (step === "login") {
+        if (step === "login" || step === "login-email") {
           setLoginCode(c => c.slice(0, -1));
         } else if (confirmingPasscode) {
           setConfirmPasscode(p => p.slice(0, -1));
@@ -344,12 +369,13 @@ export function NewHireAuth({ children }: Props) {
                 )}
                 <button
                   type="submit"
-                  className="w-full mt-4 py-3 rounded-xl text-white font-semibold text-sm transition-all active:scale-[0.98]"
+                  disabled={isCheckingEmail}
+                  className="w-full mt-4 py-3 rounded-xl text-white font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ backgroundColor: AC.tealDim, border: `1px solid ${AC.teal}` }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = AC.teal)}
+                  onMouseEnter={e => !isCheckingEmail && (e.currentTarget.style.backgroundColor = AC.teal)}
                   onMouseLeave={e => (e.currentTarget.style.backgroundColor = AC.tealDim)}
                 >
-                  Continue
+                  {isCheckingEmail ? "Checking..." : "Continue"}
                 </button>
               </form>
             </>
@@ -388,14 +414,17 @@ export function NewHireAuth({ children }: Props) {
             </>
           )}
 
-          {/* ── LOGIN: Passcode-only step ── */}
+          {/* ── LOGIN: Passcode-only step (cookie session found) ── */}
           {step === "login" && (
             <>
               <h2 className="text-2xl font-semibold mb-1 text-white" style={{ fontFamily: AC.heading }}>
                 Welcome back
               </h2>
               <p className="text-sm mb-6" style={{ color: AC.fgMuted }}>
-                Enter your 4-digit passcode to continue.
+                {registeredEmail && (
+                  <span>Logging in as <strong style={{ color: AC.teal }}>{registeredEmail}</strong></span>
+                )}
+                {!registeredEmail && "Enter your 4-digit passcode to continue."}
               </p>
               <NumPad
                 onDigit={handleLoginDigit}
@@ -409,6 +438,32 @@ export function NewHireAuth({ children }: Props) {
                 style={{ color: "oklch(0.45 0.02 230)" }}
               >
                 Use a different email
+              </button>
+            </>
+          )}
+
+          {/* ── LOGIN-EMAIL: Email + passcode for new device ── */}
+          {step === "login-email" && (
+            <>
+              <h2 className="text-2xl font-semibold mb-1 text-white" style={{ fontFamily: AC.heading }}>
+                Welcome back
+              </h2>
+              <p className="text-sm mb-6" style={{ color: AC.fgMuted }}>
+                Enter your 4-digit passcode to continue as{" "}
+                <strong style={{ color: AC.teal }}>{registeredEmail}</strong>.
+              </p>
+              <NumPad
+                onDigit={handleLoginDigit}
+                onBackspace={() => setLoginCode(c => c.slice(0, -1))}
+                currentCode={loginCode}
+                error={passcodeError}
+              />
+              <button
+                onClick={() => { setStep("register"); setRegisteredEmail(null); setPasscode(""); setLoginCode(""); }}
+                className="w-full text-xs py-2 rounded-lg transition-all"
+                style={{ color: "oklch(0.45 0.02 230)" }}
+              >
+                ← Use a different email
               </button>
             </>
           )}

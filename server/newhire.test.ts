@@ -6,8 +6,19 @@ import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
 // Mock the db module so tests don't need a real database
-vi.mock("./db", () => ({
-  getDb: vi.fn().mockResolvedValue(null),
+vi.mock("./db", () => {
+  // Create mock db inline to avoid hoisting issues
+  const mockDb = {
+    select: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    }),
+  };
+  return {
+  getDb: vi.fn().mockResolvedValue(mockDb),
   getNewHireByEmail: vi.fn(),
   getNewHireById: vi.fn(),
   getFormSubmissionsByNewHire: vi.fn().mockResolvedValue([]),
@@ -21,7 +32,8 @@ vi.mock("./db", () => ({
   updateFormSubmissionStatus: vi.fn().mockResolvedValue(undefined),
   createFormApproval: vi.fn().mockResolvedValue(undefined),
   getApprovalsByNewHire: vi.fn().mockResolvedValue([]),
-}));
+  };
+});
 
 vi.mock("./_core/notification", () => ({
   notifyOwner: vi.fn().mockResolvedValue(true),
@@ -82,6 +94,34 @@ describe("admin.listNewHires", () => {
     const caller = appRouter.createCaller(createCtx());
     const result = await caller.admin.listNewHires();
     expect(Array.isArray(result)).toBe(true);
+  });
+});
+
+describe("newHire.loginWithPasscode (device-independent)", () => {
+  it("returns no_session when no cookie and no email provided", async () => {
+    const caller = appRouter.createCaller(createCtx(""));
+    const result = await caller.newHire.loginWithPasscode({ passcode: "1234" });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe("no_session");
+  });
+
+  it("returns no_session when email provided but not found in DB", async () => {
+    // The procedure looks up by email via getDb(); mock returns empty array so hire is null
+    const caller = appRouter.createCaller(createCtx(""));
+    const result = await caller.newHire.loginWithPasscode({
+      passcode: "1234",
+      email: "unknown@example.com",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe("no_session");
+  });
+});
+
+describe("newHire.checkEmailExists", () => {
+  it("returns exists: false for an unknown email", async () => {
+    const caller = appRouter.createCaller(createCtx(""));
+    const result = await caller.newHire.checkEmailExists({ email: "nobody@example.com" });
+    expect(result.exists).toBe(false);
   });
 });
 

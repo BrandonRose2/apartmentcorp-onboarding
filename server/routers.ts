@@ -126,15 +126,32 @@ export const appRouter = router({
       }),
 
     loginWithPasscode: publicProcedure
-      .input(z.object({ passcode: z.string().length(4).regex(/^\d{4}$/) }))
+      .input(z.object({
+        passcode: z.string().length(4).regex(/^\d{4}$/),
+        email: z.string().email().optional(), // optional: for device-independent login
+      }))
       .mutation(async ({ input, ctx }) => {
-        const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        let hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+        // Fallback: if no cookie session, look up by email
+        if (!hire && input.email) {
+          const db = await getDb();
+          const rows = await db.select().from(newHires).where(eq(newHires.email, input.email.toLowerCase())).limit(1);
+          hire = rows[0] ?? null;
+        }
         if (!hire) return { success: false, error: "no_session" } as const;
         if (hire.passcode !== input.passcode) return { success: false, error: "wrong_passcode" } as const;
         await updateNewHireLastLogin(hire.id);
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(NEW_HIRE_COOKIE, encodeURIComponent(hire.email), { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
         return { success: true, email: hire.email, id: hire.id } as const;
+      }),
+
+    checkEmailExists: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        const rows = await db.select({ id: newHires.id }).from(newHires).where(eq(newHires.email, input.email.toLowerCase())).limit(1);
+        return { exists: rows.length > 0 };
       }),
 
     checkSession: publicProcedure.query(async ({ ctx }) => {

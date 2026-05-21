@@ -44,7 +44,7 @@
 - [x] Backend: tRPC procedures for credentials (admin.getCredentials, admin.saveCredentials, credentials.getMyCredentials)
 - [x] Admin Dashboard: "Logins" modal per new hire with platform checkboxes + username/password/notes fields
 - [x] New hire portal: MyLoginsScreen with masked passwords + reveal/copy
-- [ ] Fix new hire login flow: returning employees can log in with email + passcode on any device (no cookie dependency)
+- [x] Fix new hire login flow: returning employees can log in with email + passcode on any device (email entry step, checkEmailExists procedure, loginWithPasscode accepts email fallback)
 - [x] Employment application: "Position Applied For" dropdown (positions.list) and "Property/Location" dropdown (all buildings from DB)
 - [x] Approval flow: Applicant → Brandon → Robert → Ethan → Nicole → Marc (DB schema, backend, admin UI all updated)
 - [x] PropertyMAX Training Checklist: DB table (propertymax_training_progress with timestamp + signature)

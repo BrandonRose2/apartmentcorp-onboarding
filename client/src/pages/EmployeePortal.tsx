@@ -785,7 +785,7 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
         <button onClick={onViewLogins}
           className="flex items-center gap-3 p-4 rounded-xl border text-left transition-all active:scale-[0.97] hover:border-opacity-80"
           style={{ backgroundColor: AC.bgCard, borderColor: AC.teal + "55", color: AC.fg }}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: AC.teal + "18" }}>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${AC.teal}18` }}>
             <KeyRound className="w-4 h-4" style={{ color: AC.teal }} />
           </div>
           <div>
@@ -796,7 +796,7 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
         <button onClick={onViewTraining}
           className="flex items-center gap-3 p-4 rounded-xl border text-left transition-all active:scale-[0.97] hover:border-opacity-80"
           style={{ backgroundColor: AC.bgCard, borderColor: AC.tealDim + "55", color: AC.fg }}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: AC.tealDim + "18" }}>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${AC.tealDim}18` }}>
             <BookOpen className="w-4 h-4" style={{ color: AC.tealDim }} />
           </div>
           <div>
@@ -839,7 +839,7 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
       }}>
       <div className="flex items-start gap-4 p-5">
         <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-          style={{ backgroundColor: isComplete ? AC.teal + "18" : isLocked ? AC.bgRaised : chapter.accentColor + "18" }}>
+          style={{ backgroundColor: isComplete ? `${AC.teal}18` : isLocked ? AC.bgRaised : `${chapter.accentColor}18` }}>
           {isComplete ? "✅" : isLocked ? "🔒" : chapter.icon}
         </div>
 
@@ -853,7 +853,7 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
             </div>
             {isComplete ? (
               <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-              style={{ backgroundColor: AC.teal + "18", color: AC.teal }}>
+              style={{ backgroundColor: `${AC.teal}18`, color: AC.teal }}>
                 <CheckCircle2 className="w-3.5 h-3.5" /> {isSubmitted ? "Submitted" : "Complete"}
               </span>
             ) : isLocked ? (
@@ -861,7 +861,7 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
                 style={{ backgroundColor: AC.bgRaised, color: AC.fgSubtle }}>Locked</span>
             ) : (
               <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-                style={{ backgroundColor: chapter.accentColor + "18", color: chapter.accentColor }}>
+                style={{ backgroundColor: `${chapter.accentColor}18`, color: chapter.accentColor }}>
                 <Clock className="w-3 h-3" /> ~{chapter.estimatedMinutes} min
               </span>
             )}
@@ -934,7 +934,7 @@ function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, o
 
       <div className="flex items-start gap-4 mb-8">
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ backgroundColor: chapter.accentColor + "18", border: `1px solid ${chapter.accentColor}33` }}>
+          style={{ backgroundColor: `${chapter.accentColor}18`, border: `1px solid ${chapter.accentColor}33` }}>
           {chapter.icon}
         </div>
         <div>
