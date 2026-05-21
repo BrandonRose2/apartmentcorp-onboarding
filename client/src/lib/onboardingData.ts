@@ -117,10 +117,6 @@ export const PHASES: Phase[] = [
             required: true,
           },
           {
-            id: "1.10",
-            label: "Set up company email and Microsoft 365 accounts",
-          },
-          {
             id: "1.10b",
             label: "Set up VMware Horizon virtual desktop on your property workstation",
             description: "Launch VMware Horizon Client, connect to horizon.apartmentcorp.com, and log in with your IT-provided credentials. Record your workstation serial number and report it to IT.",

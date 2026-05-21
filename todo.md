@@ -60,3 +60,5 @@
 - [x] VMware Horizon (Virtual Desktop) added to IT & Equipment with serial number field
 - [x] Fix stale closure bug in NewHireAuth — registeredEmail was not captured in submitLogin useCallback (login with email + passcode was failing)
 - [x] Remove Microsoft 365 section from Technology Onboarding tab
+- [x] Remove all Microsoft 365 references from HR Admin Dashboard (websitesData.ts, onboardingData.ts)
+- [x] Fix form submission double-encoding cookie bug — email was URL-encoded twice causing "Not authenticated" on submit

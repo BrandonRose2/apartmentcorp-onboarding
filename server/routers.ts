@@ -38,7 +38,14 @@ async function getNewHireFromCookie(cookieHeader: string) {
     .map((c: string) => c.trim().split("="))
     .find(([k]: string[]) => k === NEW_HIRE_COOKIE)?.[1];
   if (!emailFromCookie) return null;
-  return getNewHireByEmail(decodeURIComponent(emailFromCookie));
+  // Decode safely — handle both plain and URL-encoded values
+  let email = emailFromCookie;
+  try { email = decodeURIComponent(emailFromCookie); } catch { /* use raw value */ }
+  // If still encoded (double-encoded), decode again
+  if (email.includes("%40") || email.includes("%2540")) {
+    try { email = decodeURIComponent(email); } catch { /* use as-is */ }
+  }
+  return getNewHireByEmail(email.toLowerCase());
 }
 
 // Buildings seed data
@@ -114,7 +121,7 @@ export const appRouter = router({
         if (existing.length > 0) return { success: false, error: "email_taken" } as const;
         await db.insert(newHires).values({ email: input.email.toLowerCase(), passcode: input.passcode });
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(NEW_HIRE_COOKIE, encodeURIComponent(input.email.toLowerCase()), { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
+        ctx.res.cookie(NEW_HIRE_COOKIE, input.email.toLowerCase(), { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
         // Notify admin of new registration
         await notifyOwner({ title: "New Hire Registered", content: `${input.email} has registered on the onboarding portal.` });
         // Send welcome email to new hire
@@ -142,7 +149,7 @@ export const appRouter = router({
         if (hire.passcode !== input.passcode) return { success: false, error: "wrong_passcode" } as const;
         await updateNewHireLastLogin(hire.id);
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(NEW_HIRE_COOKIE, encodeURIComponent(hire.email), { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
+        ctx.res.cookie(NEW_HIRE_COOKIE, hire.email, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
         return { success: true, email: hire.email, id: hire.id } as const;
       }),
 

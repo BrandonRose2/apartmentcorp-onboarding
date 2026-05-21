@@ -112,33 +112,16 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
     icon: "🏢",
     category: "hr-payroll",
     description: "Internal intranet for company news, policies, org chart, training resources, and HR forms.",
-    loginInstructions: "Log in with your Microsoft 365 credentials (same as your company email and Outlook password).",
+    loginInstructions: "Log in with your company email and IT-provided password.",
     fields: [
       { label: "URL", value: "https://employees.apartmentcorp.com" },
       { label: "Username", value: "Your company email" },
-      { label: "Password", value: "Your Microsoft 365 password", sensitive: true },
+      { label: "Password", value: "Provided by IT on Day 1", sensitive: true },
     ],
     accessLevel: "All Staff",
   },
 
   // ── Communication & Collaboration ────────────────────────────────────────
-  {
-    id: "microsoft365",
-    name: "Microsoft 365 (Outlook, Teams, SharePoint)",
-    url: "https://office.com",
-    icon: "📧",
-    category: "communication",
-    description: "Company email (Outlook), team messaging and video calls (Teams), and file storage (SharePoint/OneDrive).",
-    loginInstructions: "IT will provision your Microsoft 365 account on Day 1. Your username is your company email. Your temporary password will be texted to your personal phone.",
-    fields: [
-      { label: "Login URL", value: "https://office.com" },
-      { label: "Username", value: "firstname.lastname@apartmentcorp.com" },
-      { label: "Temp Password", value: "Texted to your personal phone by IT on Day 1", sensitive: true },
-    ],
-    notes: "Enable Multi-Factor Authentication (MFA) immediately after your first login. Download the Microsoft Authenticator app on your phone.",
-    accessLevel: "All Staff",
-  },
-
   {
     id: "zoom",
     name: "Zoom",
