@@ -46,9 +46,6 @@ export function NewHireReviewTab() {
   const [selectedPosition, setSelectedPosition] = useState<Position | "">("");
   const [reviewingSubmission, setReviewingSubmission] = useState<{ id: number; newHireId: number; formType: string; formData: unknown } | null>(null);
   const [approvalNotes, setApprovalNotes] = useState("");
-  const [approverName, setApproverName] = useState("Ethan Cowles");
-  const [approverEmail, setApproverEmail] = useState("ethan@apartmentcorp.com");
-  const [approverRole, setApproverRole] = useState<"manager" | "hr">("hr");
 
   const { data: hires, refetch: refetchHires } = trpc.admin.listNewHires.useQuery();
   const { data: buildings } = trpc.buildings.list.useQuery();
@@ -89,9 +86,6 @@ export function NewHireReviewTab() {
       submissionId: reviewingSubmission.id,
       newHireId: reviewingSubmission.newHireId,
       action,
-      approverName,
-      approverEmail,
-      approverRole,
       notes: approvalNotes || undefined,
     });
   };
@@ -434,38 +428,10 @@ export function NewHireReviewTab() {
                 </div>
               </div>
 
-              {/* Approver Info */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: "oklch(0.65 0.05 250)" }}>Your Name</label>
-                  <input
-                    value={approverName}
-                    onChange={e => setApproverName(e.target.value)}
-                    className="w-full text-xs rounded-lg px-3 py-2 outline-none text-white"
-                    style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: "oklch(0.65 0.05 250)" }}>Your Email</label>
-                  <input
-                    value={approverEmail}
-                    onChange={e => setApproverEmail(e.target.value)}
-                    className="w-full text-xs rounded-lg px-3 py-2 outline-none text-white"
-                    style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs mb-1 block" style={{ color: "oklch(0.65 0.05 250)" }}>Approver Role</label>
-                <select
-                  value={approverRole}
-                  onChange={e => setApproverRole(e.target.value as "manager" | "hr")}
-                  className="w-full text-xs rounded-lg px-3 py-2 outline-none text-white"
-                  style={{ backgroundColor: "oklch(0.22 0.07 258)", border: "1px solid oklch(0.30 0.08 256)" }}
-                >
-                  <option value="manager">Regional Manager</option>
-                  <option value="hr">HR / Upper Management</option>
-                </select>
+              {/* Reviewer identity */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: "oklch(0.22 0.07 258)", color: "oklch(0.75 0.05 250)" }}>
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.65 0.18 145)" }} />
+                Reviewing as <span className="font-semibold text-white">Brandon</span> &mdash; your approval unlocks the new hire's next step
               </div>
               <div>
                 <label className="text-xs mb-1 block" style={{ color: "oklch(0.65 0.05 250)" }}>Notes (optional)</label>

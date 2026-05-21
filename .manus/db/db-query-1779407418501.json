@@ -1,0 +1,18 @@
+{
+  "query": "SHOW COLUMNS FROM new_hires LIKE 'onboardingStatus';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SHOW COLUMNS FROM new_hires LIKE 'onboardingStatus';",
+  "rows": [
+    {
+      "Field": "onboardingStatus",
+      "Type": "enum('pending','in_progress','submitted','brandon_approved','robert_approved','ethan_approved','nicole_approved','marc_approved','rejected')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "pending",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nonboardingStatus\tenum('pending','in_progress','submitted','brandon_approved','robert_approved','ethan_approved','nicole_approved','marc_approved','rejected')\tNO\t\tpending\t\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

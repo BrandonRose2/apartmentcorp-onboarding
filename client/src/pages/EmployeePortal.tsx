@@ -463,7 +463,12 @@ function EmployeePortalContent() {
 
   const saveDraft = trpc.forms.saveDraft.useMutation();
   const submitForm = trpc.forms.submit.useMutation();
+  // Fetch all submitted forms — used to authoritatively rebuild chapter state on load
+  const { data: myForms } = trpc.forms.getMyForms.useQuery(undefined, {
+    refetchInterval: 30_000, // poll every 30s so approval unlocks are reflected without manual refresh
+  });
 
+  // Restore name/date/formValues from localStorage on mount (NOT chapter unlock state)
   useEffect(() => {
     const saved = localStorage.getItem("ac_employee_portal_v3");
     if (saved) {
@@ -472,21 +477,67 @@ function EmployeePortalContent() {
         if (data.employeeName) { setEmployeeName(data.employeeName); setNameInput(data.employeeName); }
         if (data.startDate) { setStartDate(data.startDate); setDateInput(data.startDate); }
         if (data.formValues) setFormValues(data.formValues);
-        if (data.chapters) setChapters(data.chapters);
+        // Do NOT restore chapters from localStorage — chapter state is rebuilt from server below
         if (data.employeeName) setCurrentScreen("chapters");
       } catch {}
     }
   }, []);
 
+  // Authoritatively rebuild chapter state from server data whenever myForms changes.
+  // Rules:
+  //   - hr_approved → chapter is "complete" and the NEXT chapter is unlocked
+  //   - submitted (pending review) → chapter is "submitted", next chapter stays locked
+  //   - draft → chapter is "in-progress" (form was started but not submitted)
+  //   - First chapter is always "available" once the new hire has entered their name
+  useEffect(() => {
+    if (!myForms) return;
+    setChapters(() => {
+      const approvedTypes = new Set(myForms.filter(f => f.status === "hr_approved").map(f => f.formType));
+      const submittedTypes = new Set(myForms.filter(f => f.status === "submitted").map(f => f.formType));
+      const draftTypes = new Set(myForms.filter(f => f.status === "draft").map(f => f.formType));
+
+      let unlockNext = false;
+      return CHAPTERS.map((c, i) => {
+        // Chapter 0 is always available once the portal is open
+        const isFirst = i === 0;
+        if (!c.formType) {
+          // Non-form chapter (e.g. benefits): unlock if previous was approved
+          const status = unlockNext || isFirst ? "available" as const : "locked" as const;
+          unlockNext = false;
+          return { ...c, status };
+        }
+        if (approvedTypes.has(c.formType)) {
+          unlockNext = true; // next chapter should be unlocked
+          return { ...c, status: "complete" as const };
+        }
+        if (submittedTypes.has(c.formType)) {
+          unlockNext = false; // submitted but not yet approved — next stays locked
+          return { ...c, status: "submitted" as const };
+        }
+        if (draftTypes.has(c.formType)) {
+          unlockNext = false;
+          return { ...c, status: "in-progress" as const };
+        }
+        // Not yet started
+        if (unlockNext || isFirst) {
+          unlockNext = false;
+          return { ...c, status: "available" as const };
+        }
+        return { ...c, status: "locked" as const };
+      });
+    });
+  }, [myForms]);
+
   useEffect(() => {
     if (employeeName) {
       const t = setTimeout(() => {
-        localStorage.setItem("ac_employee_portal_v3", JSON.stringify({ employeeName, startDate, formValues, chapters }));
+        // Do NOT persist chapters — chapter state is rebuilt authoritatively from the server
+        localStorage.setItem("ac_employee_portal_v3", JSON.stringify({ employeeName, startDate, formValues }));
         setLastSaved(new Date());
       }, 1000);
       return () => clearTimeout(t);
     }
-  }, [employeeName, startDate, formValues, chapters]);
+  }, [employeeName, startDate, formValues]);
 
   const completedChapters = chapters.filter(c => c.status === "complete" || c.status === "submitted").length;
   const totalChapters = chapters.filter(c => c.formType !== null).length;
@@ -536,17 +587,14 @@ function EmployeePortalContent() {
 
     try {
       await submitForm.mutateAsync({ formType: chapter.formType as any, formData: values });
-      setChapters(prev => {
-        return prev.map((c, i) => {
-          if (c.id === chapterId) return { ...c, status: "submitted" as const };
-          const prevChapter = prev[i - 1];
-          if (prevChapter?.id === chapterId && c.status === "locked") return { ...c, status: "available" as const };
-          return c;
-        });
-      });
+      // Mark this chapter as submitted — do NOT unlock next chapter yet.
+      // The next chapter unlocks only after Brandon approves this submission.
+      setChapters(prev => prev.map(c =>
+        c.id === chapterId ? { ...c, status: "submitted" as const } : c
+      ));
       setActiveChapterId(null);
       setCurrentScreen("chapters");
-      toast.success(`"${chapter.title}" submitted for review!`, { duration: 3500 });
+      toast.success(`"${chapter.title}" submitted! Awaiting review before the next step unlocks.`, { duration: 4000 });
     } catch (err) {
       toast.error("Failed to submit. Your draft has been saved locally — please try again.");
     }

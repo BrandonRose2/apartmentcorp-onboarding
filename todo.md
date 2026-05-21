@@ -62,3 +62,7 @@
 - [x] Remove Microsoft 365 section from Technology Onboarding tab
 - [x] Remove all Microsoft 365 references from HR Admin Dashboard (websitesData.ts, onboardingData.ts)
 - [x] Fix form submission double-encoding cookie bug — email was URL-encoded twice causing "Not authenticated" on submit
+- [x] Gate next chapter unlock on Brandon's approval (not immediate client-side unlock)
+- [x] Admin review panel: remove approver role selector, default to Brandon as sole approver
+- [x] Submit notification: only notify Brandon, remove regional manager mention
+- [x] New hire portal: on load fetch approved submissions from server to restore correct chapter unlock state

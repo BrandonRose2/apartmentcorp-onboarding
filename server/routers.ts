@@ -219,16 +219,10 @@ export const appRouter = router({
         if (hire.onboardingStatus === "pending") {
           await updateNewHireAssignment(hire.id, { onboardingStatus: "in_progress" });
         }
-        // Get building info for notification
-        let regionalManagerEmail = "brandon@apartmentcorp.com";
-        if (hire.buildingId) {
-          const building = await getBuildingById(hire.buildingId);
-          if (building?.regionalManagerEmail) regionalManagerEmail = building.regionalManagerEmail;
-        }
-        // Notify admin + regional manager
+        // Notify admin only (testing mode — single approver)
         await notifyOwner({
           title: `Form Submitted: ${input.formType.replace(/_/g, " ")}`,
-          content: `${hire.email} submitted the ${input.formType.replace(/_/g, " ")} form. Regional manager (${regionalManagerEmail}) has been notified.`,
+          content: `${hire.email} submitted the ${input.formType.replace(/_/g, " ")} form and is awaiting your review in the Admin Dashboard.`,
         });
         return { success: true, id };
       }),
@@ -237,6 +231,24 @@ export const appRouter = router({
       const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
       if (!hire) return [];
       return getFormSubmissionsByNewHire(hire.id);
+    }),
+
+    // Returns the set of formTypes that have been approved — used to gate chapter unlocks
+    getMyApprovedForms: publicProcedure.query(async ({ ctx }) => {
+      const hire = await getNewHireFromCookie(ctx.req.headers.cookie ?? "");
+      if (!hire) return [];
+      const db = await getDb();
+      if (!db) return [];
+      const subs = await db
+        .select({ formType: formSubmissions.formType })
+        .from(formSubmissions)
+        .where(
+          and(
+            eq(formSubmissions.newHireId, hire.id),
+            eq(formSubmissions.status, "hr_approved")
+          )
+        );
+      return subs.map(s => s.formType);
     }),
   }),
 
@@ -292,49 +304,30 @@ export const appRouter = router({
         return { hire, building, submissions: subs, approvals };
       }),
 
-    // Approve or reject a form submission
+      // Approve or reject a form submission (single approver: Brandon)
     reviewSubmission: publicProcedure
       .input(z.object({
         submissionId: z.number(),
         newHireId: z.number(),
         action: z.enum(["approved", "rejected"]),
-        approverName: z.string(),
-        approverEmail: z.string().email(),
-        approverRole: z.enum(["manager", "hr"]),
         notes: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const newStatus = input.approverRole === "manager"
-          ? (input.action === "approved" ? "manager_approved" : "manager_rejected")
-          : (input.action === "approved" ? "hr_approved" : "hr_rejected");
-
+        // Single approval step — approved = hr_approved (unlocks next chapter for new hire)
+        const newStatus = input.action === "approved" ? "hr_approved" : "hr_rejected";
         await updateFormSubmissionStatus(input.submissionId, newStatus as any);
         await createFormApproval({
           submissionId: input.submissionId,
           newHireId: input.newHireId,
-          approverName: input.approverName,
-          approverEmail: input.approverEmail,
-          approverRole: input.approverRole,
+          approverName: "Brandon",
+          approverEmail: "brandon@apartmentcorp.com",
+          approverRole: "hr",
           action: input.action,
           notes: input.notes ?? null,
         });
-
-        // If manager approved, update new hire status
-        if (input.approverRole === "manager" && input.action === "approved") {
-          await updateNewHireAssignment(input.newHireId, { onboardingStatus: "manager_approved" });
-          await notifyOwner({
-            title: "Manager Approved Submission",
-            content: `Submission #${input.submissionId} approved by ${input.approverName}. Ready for HR review.`,
-          });
-        }
-        if (input.approverRole === "hr" && input.action === "approved") {
+        if (input.action === "approved") {
           await updateNewHireAssignment(input.newHireId, { onboardingStatus: "hr_approved" });
-          await notifyOwner({
-            title: "New Hire Fully Onboarded",
-            content: `New hire #${input.newHireId} has been fully approved by HR and is now onboarded.`,
-          });
         }
-
         return { success: true };
       }),
 
