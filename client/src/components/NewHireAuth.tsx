@@ -151,20 +151,8 @@ export function NewHireAuth({ children }: Props) {
     });
   };
 
-  // ── Login flow ─────────────────────────────────────────────────────────────
-
-  const handleLoginDigit = useCallback((digit: string) => {
-    setLoginCode(prev => {
-      if (prev.length >= 4) return prev;
-      const next = prev + digit;
-      if (next.length === 4) {
-        setTimeout(() => submitLogin(next), 120);
-      }
-      return next;
-    });
-  }, []);
-
-  const submitLogin = async (code: string) => {
+   // ── Login flow ─────────────────────────────────────────────────────────────
+  const submitLogin = useCallback(async (code: string) => {
     try {
       // Pass email for device-independent login (no cookie needed)
       const result = await loginMutation.mutateAsync({
@@ -185,9 +173,18 @@ export function NewHireAuth({ children }: Props) {
       setLoginCode("");
       setTimeout(() => setPasscodeError(false), 1500);
     }
-  };
-
-  // ── Global keyboard listener for PIN screens ───────────────────────────────
+  }, [loginMutation, registeredEmail]);
+  const handleLoginDigit = useCallback((digit: string) => {
+    setLoginCode(prev => {
+      if (prev.length >= 4) return prev;
+      const next = prev + digit;
+      if (next.length === 4) {
+        setTimeout(() => submitLogin(next), 120);
+      }
+      return next;
+    });
+  }, [submitLogin]);
+  // ── Global keyboard listener for PIN screenss ───────────────────────────────
 
   useEffect(() => {
     const isOnPinScreen =

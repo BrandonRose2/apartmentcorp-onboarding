@@ -58,3 +58,5 @@
 - [x] Slack removed from all platform lists and onboarding checklist
 - [x] IT & Equipment category added to Company Websites & Logins tab
 - [x] VMware Horizon (Virtual Desktop) added to IT & Equipment with serial number field
+- [x] Fix stale closure bug in NewHireAuth — registeredEmail was not captured in submitLogin useCallback (login with email + passcode was failing)
+- [x] Remove Microsoft 365 section from Technology Onboarding tab

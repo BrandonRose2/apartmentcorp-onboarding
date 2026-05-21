@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  Monitor, User, Mail, Smartphone, Laptop, CreditCard,
+  Monitor, User, Smartphone, Laptop, CreditCard,
   Building2, ChevronDown, ChevronUp, Save, CheckCircle2,
   Copy, Eye, EyeOff, Printer, Cpu, Wrench, Users, ClipboardList,
   Phone, BarChart3, DollarSign, RefreshCw, AlertCircle
@@ -63,21 +63,6 @@ const TECH_SECTIONS: TechSection[] = [
       { key: "start_date", label: "Start Date", placeholder: "MM/DD/YYYY", type: "text", required: true },
       { key: "office_location", label: "Office / Property Location", placeholder: "Main Office — Dallas, TX", type: "text" },
       { key: "direct_supervisor", label: "Direct Supervisor", placeholder: "Manager Name", type: "text" },
-    ],
-  },
-  // ── 2. Company Email & M365 ─────────────────────────────────────────────────
-  {
-    id: "company_email",
-    title: "Company Email & Microsoft 365",
-    subtitle: "Email account and Microsoft suite access",
-    icon: <Mail className="w-5 h-5" />,
-    color: "oklch(0.60 0.18 250)",
-    fields: [
-      { key: "company_email", label: "Company Email Address", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
-      { key: "m365_temp_password", label: "Microsoft 365 Temp Password", placeholder: "TempPass2024!", type: "password", required: true, hint: "Employee must change on first login" },
-      { key: "m365_license", label: "M365 License Assigned", placeholder: "Business Standard", type: "select", options: ["Business Basic", "Business Standard", "Business Premium", "Apps for Business"] },
-      { key: "sharepoint_access", label: "SharePoint Access Level", placeholder: "Member", type: "select", options: ["View Only", "Member", "Owner", "No Access"] },
-      { key: "onedrive_storage", label: "OneDrive Storage Quota", placeholder: "1 TB (default)", type: "text" },
     ],
   },
   // ── 3. PropertyMAX.ai ───────────────────────────────────────────────────────
