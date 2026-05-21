@@ -7,10 +7,10 @@ describe("Resend email integration", () => {
     expect(valid).toBe(true);
   }, 15000);
 
-  it("sends a welcome email to the test new hire (Robert @ robert@apartmentcorp.com)", async () => {
+  it("sends a welcome email to the test new hire (Brandon @ brandon@apartmentcorp.com)", async () => {
     const result = await sendWelcomeEmail({
-      toEmail: "robert@apartmentcorp.com",
-      firstName: "Robert",
+      toEmail: "brandon@apartmentcorp.com",
+      firstName: "Brandon",
       portalUrl: "https://aptonboard-pxsj4nvm.manus.space/onboarding",
     });
     expect(result).toBe(true);
