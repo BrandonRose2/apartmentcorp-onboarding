@@ -127,7 +127,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
       from: FROM_EMAIL,
       to: [toEmail],
       cc: toEmail !== CC_EMAIL ? [CC_EMAIL] : [],
-      replyTo: REPLY_TO,
+      reply_to: REPLY_TO,
       subject: `Welcome to ApartmentCorp, ${firstName}! Your Onboarding Portal is Ready`,
       html,
     });

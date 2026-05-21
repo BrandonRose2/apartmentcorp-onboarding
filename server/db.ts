@@ -16,7 +16,6 @@ import {
   formSubmissions,
   newHireCredentials,
   newHires,
-  propertyMaxTrainingProgress,
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -254,60 +253,4 @@ export async function deleteCredentialsByNewHire(newHireId: number): Promise<voi
   const db = await getDb();
   if (!db) return;
   await db.delete(newHireCredentials).where(eq(newHireCredentials.newHireId, newHireId));
-}
-
-// ─── PropertyMAX Training Checklist ──────────────────────────────────────────
-export async function getTrainingProgressByNewHire(newHireId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return db
-    .select()
-    .from(propertyMaxTrainingProgress)
-    .where(eq(propertyMaxTrainingProgress.newHireId, newHireId));
-}
-
-export async function upsertTrainingProgress(data: {
-  newHireId: number;
-  itemId: string;
-  completed: boolean;
-  completedAt?: Date | null;
-  signature?: string | null;
-}): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const existing = await db
-    .select()
-    .from(propertyMaxTrainingProgress)
-    .where(
-      and(
-        eq(propertyMaxTrainingProgress.newHireId, data.newHireId),
-        eq(propertyMaxTrainingProgress.itemId, data.itemId)
-      )
-    )
-    .limit(1);
-  if (existing.length > 0) {
-    await db
-      .update(propertyMaxTrainingProgress)
-      .set({
-        completed: data.completed,
-        completedAt: data.completedAt ?? null,
-        signature: data.signature ?? null,
-        updatedAt: new Date(),
-      })
-      .where(eq(propertyMaxTrainingProgress.id, existing[0].id));
-  } else {
-    await db.insert(propertyMaxTrainingProgress).values({
-      newHireId: data.newHireId,
-      itemId: data.itemId,
-      completed: data.completed,
-      completedAt: data.completedAt ?? null,
-      signature: data.signature ?? null,
-    });
-  }
-}
-
-export async function getAllTrainingProgressForAdmin() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(propertyMaxTrainingProgress);
 }

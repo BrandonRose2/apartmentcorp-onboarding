@@ -34,6 +34,7 @@ export const WEBSITE_CATEGORIES: WebsiteCategory[] = [
   { id: "maintenance",   label: "Maintenance & Operations",      icon: "🔧", color: "amber" },
   { id: "marketing",     label: "Marketing & Leasing",           icon: "📣", color: "purple" },
   { id: "finance",       label: "Finance & Accounting",          icon: "💰", color: "navy" },
+  { id: "it-equipment",  label: "IT & Equipment",                icon: "💻", color: "green" },
 ];
 
 export const COMPANY_WEBSITES: CompanyWebsite[] = [
@@ -137,21 +138,7 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
     notes: "Enable Multi-Factor Authentication (MFA) immediately after your first login. Download the Microsoft Authenticator app on your phone.",
     accessLevel: "All Staff",
   },
-  {
-    id: "slack",
-    name: "Slack",
-    url: "https://slack.com",
-    icon: "💬",
-    category: "communication",
-    description: "Real-time messaging for team communication. Key channels: #general, #maintenance-requests, #leasing-team, #announcements.",
-    loginInstructions: "You will receive a Slack invitation to your company email. Click the link to join the ApartmentCorp workspace.",
-    fields: [
-      { label: "Workspace URL", value: "apartmentcorp.slack.com" },
-      { label: "Invitation", value: "Sent to your company email by IT" },
-    ],
-    notes: "Download the Slack desktop and mobile apps. Set your notification preferences to avoid after-hours alerts unless you are on-call.",
-    accessLevel: "All Staff",
-  },
+
   {
     id: "zoom",
     name: "Zoom",
@@ -229,6 +216,25 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
       { label: "Access Request", value: "Email marketing@apartmentcorp.com" },
     ],
     accessLevel: "Leasing",
+  },
+
+  // ── IT & Equipment ────────────────────────────────────────────────────────────────────────────────
+  {
+    id: "vmware",
+    name: "VMware Horizon (Virtual Desktop)",
+    url: "https://vmware.com",
+    icon: "💻",
+    category: "it-equipment",
+    description: "Virtual desktop infrastructure used on property computers. Allows secure access to all company applications from shared workstations.",
+    loginInstructions: "VMware Horizon Client is pre-installed on your property workstation. Launch it and connect to the server below using your assigned credentials. Your username and password will be provided by IT on Day 1.",
+    fields: [
+      { label: "Connection Server", value: "horizon.apartmentcorp.com" },
+      { label: "Username", value: "Provided by IT on Day 1" },
+      { label: "Password", value: "Provided by IT on Day 1", sensitive: true },
+      { label: "Workstation Serial #", value: "Located on a sticker on the back or bottom of your workstation" },
+    ],
+    notes: "Each property workstation has a unique serial number — record it and report it to IT if you experience any issues. All company applications run inside the VMware virtual desktop; do not install software on the host machine.",
+    accessLevel: "All Staff",
   },
 
   // ── Finance & Accounting ─────────────────────────────────────────────────

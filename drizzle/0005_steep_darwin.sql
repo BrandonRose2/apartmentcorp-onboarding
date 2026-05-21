@@ -1,3 +1,0 @@
-ALTER TABLE `form_approvals` MODIFY COLUMN `approverRole` enum('brandon','robert','ethan','nicole','marc') NOT NULL;--> statement-breakpoint
-ALTER TABLE `form_submissions` MODIFY COLUMN `status` enum('draft','submitted','brandon_approved','brandon_rejected','robert_approved','robert_rejected','ethan_approved','ethan_rejected','nicole_approved','nicole_rejected','marc_approved','marc_rejected') NOT NULL DEFAULT 'draft';--> statement-breakpoint
-ALTER TABLE `new_hires` MODIFY COLUMN `onboardingStatus` enum('pending','in_progress','submitted','brandon_approved','robert_approved','ethan_approved','nicole_approved','marc_approved','rejected') NOT NULL DEFAULT 'pending';

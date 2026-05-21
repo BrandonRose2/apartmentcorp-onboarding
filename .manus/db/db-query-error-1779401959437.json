@@ -1,0 +1,8 @@
+{
+  "query": "SELECT nh.id, nh.email, nh.first_name, nh.last_name, nh.onboarding_status, nh.created_at,\n  COUNT(fs.id) as form_count,\n  GROUP_CONCAT(DISTINCT fs.form_type ORDER BY fs.form_type) as forms,\n  GROUP_CONCAT(DISTINCT fs.status ORDER BY fs.status) as form_statuses\nFROM new_hires nh\nLEFT JOIN form_submissions fs ON fs.new_hire_id = nh.id\nGROUP BY nh.id\nORDER BY nh.created_at DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT nh.id, nh.email, nh.first_name, nh.last_name, nh.onboarding_status, nh.created_at,\n  COUNT(fs.id) as form_count,\n  GROUP_CONCAT(DISTINCT fs.form_type ORDER BY fs.form_type) as forms,\n  GROUP_CONCAT(DISTINCT fs.status ORDER BY fs.status) as form_statuses\nFROM new_hires nh\nLEFT JOIN form_submissions fs ON fs.new_hire_id = nh.id\nGROUP BY nh.id\nORDER BY nh.created_at DESC\nLIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'fs.new_hire_id' in 'on clause'"
+  ]
+}

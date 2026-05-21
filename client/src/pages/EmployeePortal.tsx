@@ -6,11 +6,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ChevronRight, Clock, HelpCircle, Save, Sparkles, Send, KeyRound, Eye, EyeOff, Copy } from "lucide-react";
+import { CheckCircle2, ChevronRight, Clock, HelpCircle, Save, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
 import { NewHireAuth } from "@/components/NewHireAuth";
 import { trpc } from "@/lib/trpc";
-import PropertyMaxTraining from "./PropertyMaxTraining";
 
 // ── Brand constants ───────────────────────────────────────────────────────────
 const AC = {
@@ -106,8 +105,8 @@ const CHAPTERS: Chapter[] = [
         id: "position-info",
         title: "Position Applied For",
         fields: [
-          { id: "position_applied", label: "Position Applied For", type: "select", options: ["__DYNAMIC_POSITIONS__"], required: true },
-          { id: "property_applied", label: "Property / Location", type: "select", options: ["__DYNAMIC_PROPERTIES__"], required: true },
+          { id: "position_applied", label: "Position Applied For", type: "text", placeholder: "e.g., Leasing Agent, Maintenance Tech", required: true },
+          { id: "property_applied", label: "Property / Location", type: "text", placeholder: "Property name", required: true },
           { id: "desired_salary", label: "Desired Salary / Pay Rate", type: "text", placeholder: "e.g., $18/hr or $45,000/yr" },
           { id: "available_start_date", label: "Available Start Date", type: "date", required: true },
           { id: "employment_type", label: "Employment Type Desired", type: "radio", options: ["Full-Time", "Part-Time", "Temporary", "Any"] },
@@ -453,20 +452,13 @@ const CHAPTERS: Chapter[] = [
 function EmployeePortalContent() {
   const [employeeName, setEmployeeName] = useState("");
   const [startDate, setStartDate] = useState("");
-  const [currentScreen, setCurrentScreen] = useState<"welcome" | "chapters" | "form" | "logins" | "training">("welcome");
+  const [currentScreen, setCurrentScreen] = useState<"welcome" | "chapters" | "form">("welcome");
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>(CHAPTERS);
   const [formValues, setFormValues] = useState<Record<string, Record<string, string>>>({});
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [nameInput, setNameInput] = useState("");
   const [dateInput, setDateInput] = useState("");
-
-  // Get the current new hire session — used as fallback auth for form submissions
-  const { data: nhSession } = trpc.newHire.checkSession.useQuery();
-
-  // Dynamic dropdown data for employment application
-  const { data: positionsList } = trpc.positions.list.useQuery();
-  const { data: buildingsList } = trpc.buildings.list.useQuery();
 
   const saveDraft = trpc.forms.saveDraft.useMutation();
   const submitForm = trpc.forms.submit.useMutation();
@@ -517,17 +509,12 @@ function EmployeePortalContent() {
     const chapter = chapters.find(c => c.id === chapterId);
     if (!chapter?.formType) return;
     try {
-      await saveDraft.mutateAsync({
-        formType: chapter.formType as any,
-        formData: values,
-        // Pass email as fallback auth in case cookie is not available (e.g. cross-domain)
-        email: nhSession?.email ?? undefined,
-      });
+      await saveDraft.mutateAsync({ formType: chapter.formType as any, formData: values });
       toast.success("Draft saved", { duration: 2000 });
     } catch {
       // Silently fail — local storage still saves
     }
-  }, [chapters, saveDraft, nhSession]);
+  }, [chapters, saveDraft]);
 
   const handleCompleteChapter = useCallback(async (chapterId: string, values: Record<string, string>) => {
     const chapter = chapters.find(c => c.id === chapterId);
@@ -547,12 +534,7 @@ function EmployeePortalContent() {
     }
 
     try {
-      await submitForm.mutateAsync({
-        formType: chapter.formType as any,
-        formData: values,
-        // Pass email as fallback auth in case cookie is not available (e.g. cross-domain)
-        email: nhSession?.email ?? undefined,
-      });
+      await submitForm.mutateAsync({ formType: chapter.formType as any, formData: values });
       setChapters(prev => {
         return prev.map((c, i) => {
           if (c.id === chapterId) return { ...c, status: "submitted" as const };
@@ -608,15 +590,7 @@ function EmployeePortalContent() {
         {currentScreen === "chapters" && (
           <ChaptersScreen key="chapters" employeeName={employeeName} startDate={startDate}
             chapters={chapters} completedChapters={completedChapters} totalChapters={totalChapters}
-            onStartChapter={handleStartChapter}
-            onViewLogins={() => setCurrentScreen("logins")}
-            onViewTraining={() => setCurrentScreen("training")} />
-        )}
-        {currentScreen === "logins" && (
-          <MyLoginsScreen key="logins" onBack={() => setCurrentScreen("chapters")} />
-        )}
-        {currentScreen === "training" && (
-          <PropertyMaxTrainingScreen key="training" onBack={() => setCurrentScreen("chapters")} />
+            onStartChapter={handleStartChapter} />
         )}
         {currentScreen === "form" && activeChapter && (
           <FormScreen key={`form-${activeChapter.id}`} chapter={activeChapter}
@@ -626,8 +600,7 @@ function EmployeePortalContent() {
             }))}
             onSaveDraft={() => handleSaveDraft(activeChapter.id, formValues[activeChapter.id] || {})}
             onBack={() => { setActiveChapterId(null); setCurrentScreen("chapters"); }}
-            onComplete={(values) => handleCompleteChapter(activeChapter.id, values)}
-            dynamicOptions={{ positions: positionsList ?? [], properties: (buildingsList ?? []).map(b => b.name) }} />
+            onComplete={(values) => handleCompleteChapter(activeChapter.id, values)} />
         )}
       </AnimatePresence>
     </div>
@@ -740,11 +713,9 @@ function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSub
 }
 
 // ── Chapters Screen ───────────────────────────────────────────────────────────
-function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, totalChapters, onStartChapter, onViewLogins, onViewTraining }: {
+function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, totalChapters, onStartChapter }: {
   employeeName: string; startDate: string; chapters: Chapter[];
   completedChapters: number; totalChapters: number; onStartChapter: (id: string) => void;
-  onViewLogins: () => void;
-  onViewTraining: () => void;
 }) {
   const firstName = employeeName.split(" ")[0];
   const allComplete = completedChapters === totalChapters && totalChapters > 0;
@@ -799,50 +770,8 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
         ))}
       </div>
 
-      {/* PropertyMAX Training button */}
-      <button
-        onClick={onViewTraining}
-        className="mt-4 w-full flex items-center justify-between gap-3 p-4 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
-        style={{ backgroundColor: AC.bgCard, border: `1px solid oklch(0.55 0.14 195 / 0.5)`, color: AC.fg }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "oklch(0.65 0.18 195)"; e.currentTarget.style.backgroundColor = "oklch(0.20 0.07 258)"; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "oklch(0.55 0.14 195 / 0.5)"; e.currentTarget.style.backgroundColor = AC.bgCard; }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: "oklch(0.22 0.10 195)" }}>
-            <span className="text-base">🏠</span>
-          </div>
-          <div className="text-left">
-            <div className="font-semibold" style={{ fontFamily: AC.heading }}>PropertyMAX.ai Training</div>
-            <div className="text-xs mt-0.5" style={{ color: AC.fgMuted }}>Complete your platform training checklist</div>
-          </div>
-        </div>
-        <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: AC.fgSubtle }} />
-      </button>
-
-      {/* My Logins button */}
-      <button
-        onClick={onViewLogins}
-        className="mt-6 w-full flex items-center justify-between gap-3 p-4 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
-        style={{ backgroundColor: AC.bgCard, border: `1px solid oklch(0.55 0.14 40 / 0.5)`, color: AC.fg }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "oklch(0.65 0.18 40)"; e.currentTarget.style.backgroundColor = "oklch(0.20 0.07 258)"; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "oklch(0.55 0.14 40 / 0.5)"; e.currentTarget.style.backgroundColor = AC.bgCard; }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: "oklch(0.22 0.10 40)" }}>
-            <KeyRound className="w-4 h-4" style={{ color: "oklch(0.72 0.18 40)" }} />
-          </div>
-          <div className="text-left">
-            <div className="font-semibold" style={{ fontFamily: AC.heading }}>My Platform Logins</div>
-            <div className="text-xs mt-0.5" style={{ color: AC.fgMuted }}>View your assigned usernames &amp; passwords</div>
-          </div>
-        </div>
-        <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: AC.fgSubtle }} />
-      </button>
-
       {/* Help */}
-      <div className="mt-4 flex items-start gap-3 p-4 rounded-xl text-sm"
+      <div className="mt-8 flex items-start gap-3 p-4 rounded-xl text-sm"
         style={{ backgroundColor: AC.bgCard, border: `1px solid ${AC.border}`, color: AC.fgMuted }}>
         <HelpCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: AC.teal }} />
         <span>
@@ -927,13 +856,12 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
 }
 
 // ── Form Screen ───────────────────────────────────────────────────────────────
-function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, onComplete, dynamicOptions }: {
+function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, onComplete }: {
   chapter: Chapter; formValues: Record<string, string>;
   onFieldChange: (fieldId: string, value: string) => void;
   onSaveDraft: () => void;
   onBack: () => void;
   onComplete: (values: Record<string, string>) => void;
-  dynamicOptions?: { positions: string[]; properties: string[] };
 }) {
   const [showCompleteOverlay, setShowCompleteOverlay] = useState(false);
   const [localValues, setLocalValues] = useState<Record<string, string>>(formValues);
@@ -1013,21 +941,12 @@ function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, o
                 {group.title}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {group.fields.map(field => {
-                  // Resolve dynamic options for position and property dropdowns
-                  let resolvedField = field;
-                  if (field.id === "position_applied" && dynamicOptions?.positions.length) {
-                    resolvedField = { ...field, options: dynamicOptions.positions };
-                  } else if (field.id === "property_applied" && dynamicOptions?.properties.length) {
-                    resolvedField = { ...field, options: dynamicOptions.properties };
-                  }
-                  return (
-                    <FormField key={field.id} field={resolvedField}
-                      value={localValues[field.id] || ""}
-                      onChange={v => handleFieldChange(field.id, v)}
-                      accentColor={chapter.accentColor} />
-                  );
-                })}
+                {group.fields.map(field => (
+                  <FormField key={field.id} field={field}
+                    value={localValues[field.id] || ""}
+                    onChange={v => handleFieldChange(field.id, v)}
+                    accentColor={chapter.accentColor} />
+                ))}
               </div>
             </motion.div>
           ))}
@@ -1082,41 +1001,21 @@ function FormField({ field, value, onChange, accentColor }: {
   const [showHelp, setShowHelp] = useState(false);
   const isFullWidth = field.fullWidth || field.type === "textarea" || field.type === "checkbox" || field.type === "radio" || field.type === "signature";
 
-  // Required field state
-  const isFilled = value.trim() !== "";
-  const isRequiredEmpty = field.required && !isFilled;
-  const isRequiredFilled = field.required && isFilled;
-
-  // Neon orange when required+empty, neon green when required+filled, accent when focused
-  const NEON_ORANGE = "oklch(0.72 0.22 38)";
-  const NEON_GREEN  = "oklch(0.78 0.22 142)";
-  const borderColor = focused
-    ? (isRequiredFilled ? NEON_GREEN : isRequiredEmpty ? NEON_ORANGE : accentColor)
-    : isRequiredFilled ? NEON_GREEN
-    : isRequiredEmpty ? NEON_ORANGE
-    : AC.border;
-  const glowColor = isRequiredFilled ? `${NEON_GREEN}28` : isRequiredEmpty ? `${NEON_ORANGE}28` : `${accentColor}22`;
-
   const inputStyle = {
     backgroundColor: AC.bgRaised,
-    borderColor,
+    borderColor: focused ? accentColor : AC.border,
     color: AC.fg,
     outline: "none",
-    boxShadow: (focused || isRequiredEmpty || isRequiredFilled) ? `0 0 0 2px ${glowColor}` : "none",
+    boxShadow: focused ? `0 0 0 2px ${accentColor}22` : "none",
     colorScheme: "dark" as const,
   };
 
   return (
     <div className={isFullWidth ? "sm:col-span-2" : ""}>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs font-semibold uppercase tracking-widest flex items-center gap-1.5" style={{ color: AC.fgMuted }}>
+        <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: AC.fgMuted }}>
           {field.type !== "checkbox" && field.label}
-          {field.required && field.type !== "checkbox" && !isRequiredFilled && <span className="ml-0.5" style={{ color: NEON_ORANGE }}>*</span>}
-          {isRequiredFilled && field.type !== "checkbox" && (
-            <span className="inline-flex items-center gap-0.5 text-xs normal-case tracking-normal font-semibold" style={{ color: NEON_GREEN }}>
-              <CheckCircle2 className="w-3 h-3" />
-            </span>
-          )}
+          {field.required && field.type !== "checkbox" && <span className="ml-1" style={{ color: accentColor }}>*</span>}
           {field.sensitive && <span className="ml-1.5 text-xs normal-case tracking-normal font-normal" style={{ color: AC.fgSubtle }}>🔒</span>}
         </label>
         {field.helpText && field.type !== "checkbox" && (
@@ -1139,7 +1038,7 @@ function FormField({ field, value, onChange, accentColor }: {
         <select value={value} onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           className="w-full px-3 py-2.5 rounded-xl border text-sm transition-all"
-          style={{ ...inputStyle, borderColor }}>
+          style={inputStyle}>
           <option value="">Select...</option>
           {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
@@ -1156,9 +1055,8 @@ function FormField({ field, value, onChange, accentColor }: {
               className="px-3 py-1.5 rounded-lg text-sm font-medium border transition-all"
               style={{
                 backgroundColor: value === opt ? accentColor : AC.bgRaised,
-                borderColor: value === opt ? accentColor : (isRequiredEmpty ? NEON_ORANGE : AC.border),
+                borderColor: value === opt ? accentColor : AC.border,
                 color: value === opt ? AC.bg : AC.fgMuted,
-                boxShadow: isRequiredEmpty && value !== opt ? `0 0 0 2px ${NEON_ORANGE}28` : "none",
               }}>{opt}</button>
           ))}
         </div>
@@ -1166,11 +1064,7 @@ function FormField({ field, value, onChange, accentColor }: {
         <div className="flex items-start gap-3 mt-1">
           <button onClick={() => onChange(value === "true" ? "" : "true")}
             className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 mt-0.5"
-            style={{
-              backgroundColor: value === "true" ? (isRequiredFilled ? NEON_GREEN : accentColor) : "transparent",
-              borderColor: value === "true" ? (isRequiredFilled ? NEON_GREEN : accentColor) : (isRequiredEmpty ? NEON_ORANGE : AC.border),
-              boxShadow: isRequiredEmpty ? `0 0 0 2px ${NEON_ORANGE}28` : isRequiredFilled ? `0 0 0 2px ${NEON_GREEN}28` : "none",
-            }}>
+            style={{ backgroundColor: value === "true" ? accentColor : "transparent", borderColor: value === "true" ? accentColor : AC.border }}>
             {value === "true" && <CheckCircle2 className="w-3 h-3" style={{ color: AC.bg }} />}
           </button>
           <span className="text-sm leading-relaxed" style={{ color: AC.fgMuted }}>{field.placeholder}</span>
@@ -1198,123 +1092,6 @@ function FormField({ field, value, onChange, accentColor }: {
           style={inputStyle} />
       )}
     </div>
-  );
-}
-
-// ── My Logins Screen ────────────────────────────────────────────────────────
-function MyLoginsScreen({ onBack }: { onBack: () => void }) {
-  const { data: credentials, isLoading } = trpc.credentials.getMyCredentials.useQuery();
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
-  const [copied, setCopied] = useState<string | null>(null);
-
-  const toggleReveal = (id: string) => setRevealed(prev => ({ ...prev, [id]: !prev[id] }));
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(id);
-      setTimeout(() => setCopied(null), 2000);
-    });
-  };
-
-  const assignedPlatforms = (credentials ?? []).filter(c => c.username);
-
-  return (
-    <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.35 }} className="min-h-[calc(100vh-64px)] px-4 py-8 max-w-2xl mx-auto">
-
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95"
-          style={{ backgroundColor: AC.bgCard, border: `1px solid ${AC.border}`, color: AC.fgMuted }}>
-          <ChevronRight className="w-4 h-4 rotate-180" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-semibold" style={{ fontFamily: AC.heading, color: AC.fg }}>My Platform Logins</h1>
-          <p className="text-sm mt-0.5" style={{ color: AC.fgMuted }}>Your assigned credentials for company platforms</p>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: AC.teal, borderTopColor: "transparent" }} />
-        </div>
-      ) : assignedPlatforms.length === 0 ? (
-        <div className="text-center py-16 rounded-2xl" style={{ backgroundColor: AC.bgCard, border: `1px solid ${AC.border}` }}>
-          <KeyRound className="w-12 h-12 mx-auto mb-4" style={{ color: AC.fgSubtle }} />
-          <p className="font-semibold text-lg" style={{ color: AC.fg }}>No logins assigned yet</p>
-          <p className="text-sm mt-2" style={{ color: AC.fgMuted }}>Your IT administrator will assign your platform credentials once your onboarding is complete.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {assignedPlatforms.map((cred) => (
-            <div key={cred.platform} className="rounded-2xl p-4" style={{ backgroundColor: AC.bgCard, border: `1px solid ${AC.border}` }}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: "oklch(0.22 0.10 40)" }}>
-                  <KeyRound className="w-4 h-4" style={{ color: "oklch(0.72 0.18 40)" }} />
-                </div>
-                <span className="font-semibold text-base" style={{ fontFamily: AC.heading, color: AC.fg }}>{cred.platform}</span>
-              </div>
-
-              {/* Username */}
-              <div className="mb-2">
-                <div className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: AC.fgSubtle }}>Username</div>
-                <div className="flex items-center gap-2">
-                  <span className="flex-1 text-sm px-3 py-2 rounded-lg" style={{ backgroundColor: AC.bgRaised, color: AC.fg }}>{cred.username}</span>
-                  <button onClick={() => copyToClipboard(cred.username ?? "", `${cred.platform}-user`)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                    style={{ backgroundColor: AC.bgRaised, color: copied === `${cred.platform}-user` ? "oklch(0.78 0.22 142)" : AC.fgMuted }}>
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Password */}
-              {cred.password && (
-                <div className="mb-2">
-                  <div className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: AC.fgSubtle }}>Password</div>
-                  <div className="flex items-center gap-2">
-                    <span className="flex-1 text-sm px-3 py-2 rounded-lg font-mono" style={{ backgroundColor: AC.bgRaised, color: AC.fg }}>
-                      {revealed[cred.platform] ? cred.password : "••••••••••"}
-                    </span>
-                    <button onClick={() => toggleReveal(cred.platform)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                      style={{ backgroundColor: AC.bgRaised, color: AC.fgMuted }}>
-                      {revealed[cred.platform] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                    <button onClick={() => copyToClipboard(cred.password ?? "", `${cred.platform}-pass`)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                      style={{ backgroundColor: AC.bgRaised, color: copied === `${cred.platform}-pass` ? "oklch(0.78 0.22 142)" : AC.fgMuted }}>
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              {cred.notes && (
-                <div className="mt-2 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: "oklch(0.20 0.06 258)", color: AC.fgMuted }}>
-                  📝 {cred.notes}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-6 text-center text-xs" style={{ color: AC.fgSubtle }}>
-        🔒 Keep your credentials secure. Do not share them with anyone.
-      </div>
-    </motion.div>
-  );
-}
-
-// ── PropertyMAX Training Screen Wrapper ─────────────────────────────────────
-function PropertyMaxTrainingScreen({ onBack }: { onBack: () => void }) {
-  return (
-    <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.35 }} className="min-h-[calc(100vh-64px)]">
-      <PropertyMaxTraining onBack={onBack} />
-    </motion.div>
   );
 }
 

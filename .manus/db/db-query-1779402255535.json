@@ -1,0 +1,30 @@
+{
+  "query": "SELECT nh.id, nh.email, nh.onboardingStatus, nh.createdAt, nh.lastLogin,\n  COUNT(fs.id) as form_count,\n  GROUP_CONCAT(DISTINCT fs.formType ORDER BY fs.formType SEPARATOR ', ') as forms,\n  GROUP_CONCAT(DISTINCT fs.status ORDER BY fs.status SEPARATOR ', ') as form_statuses\nFROM new_hires nh\nLEFT JOIN form_submissions fs ON fs.newHireId = nh.id\nGROUP BY nh.id\nORDER BY nh.lastLogin DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT nh.id, nh.email, nh.onboardingStatus, nh.createdAt, nh.lastLogin,\n  COUNT(fs.id) as form_count,\n  GROUP_CONCAT(DISTINCT fs.formType ORDER BY fs.formType SEPARATOR ', ') as forms,\n  GROUP_CONCAT(DISTINCT fs.status ORDER BY fs.status SEPARATOR ', ') as form_statuses\nFROM new_hires nh\nLEFT JOIN form_submissions fs ON fs.newHireId = nh.id\nGROUP BY nh.id\nORDER BY nh.lastLogin DESC;",
+  "rows": [
+    {
+      "id": "30001",
+      "email": "brandon@apartmentcorp.com",
+      "onboardingStatus": "pending",
+      "createdAt": "2026-05-20 21:19:31",
+      "lastLogin": "2026-05-20 21:19:31",
+      "form_count": "0",
+      "forms": "NULL",
+      "form_statuses": "NULL"
+    },
+    {
+      "id": "1",
+      "email": "robert@apartmentcorp.com",
+      "onboardingStatus": "pending",
+      "createdAt": "2026-05-19 22:25:38",
+      "lastLogin": "2026-05-19 22:25:38",
+      "form_count": "0",
+      "forms": "NULL",
+      "form_statuses": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tonboardingStatus\tcreatedAt\tlastLogin\tform_count\tforms\tform_statuses\n30001\tbrandon@apartmentcorp.com\tpending\t2026-05-20 21:19:31\t2026-05-20 21:19:31\t0\tNULL\tNULL\n1\trobert@apartmentcorp.com\tpending\t2026-05-19 22:25:38\t2026-05-19 22:25:38\t0\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 332
+}
