@@ -60,6 +60,8 @@ export interface FormFieldDef {
   options?: string[];
   sensitive?: boolean;
   fullWidth?: boolean;
+  disabled?: boolean;
+  gateField?: string; // if set, this field is disabled unless the named field has value "Yes"
 }
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
@@ -312,23 +314,25 @@ const CHAPTERS: Chapter[] = [
         id: "it2104",
         title: "IT-2104 — NY State Employee's Withholding Allowance Certificate",
         fields: [
-          { id: "it_first_name", label: "First Name & Middle Initial", type: "text", placeholder: "First M.", required: true },
-          { id: "it_last_name", label: "Last Name", type: "text", placeholder: "Last name", required: true },
-          { id: "it_ssn", label: "Social Security Number", type: "ssn", placeholder: "XXX-XX-XXXX", required: true, sensitive: true },
-          { id: "it_address", label: "Permanent Home Address", type: "text", placeholder: "Street address", required: true, fullWidth: true },
-          { id: "it_city", label: "City", type: "text", placeholder: "City", required: true },
-          { id: "it_state", label: "State", type: "select", required: true, options: US_STATES },
-          { id: "it_zip", label: "ZIP Code", type: "text", placeholder: "00000", required: true },
-          { id: "it_ny_resident", label: "Are you a New York State resident?", type: "radio", required: true, options: ["Yes", "No"] },
-          { id: "it_nyc_resident", label: "Are you a New York City resident?", type: "radio", required: true, options: ["Yes", "No"] },
-          { id: "it_yonkers_resident", label: "Are you a Yonkers resident?", type: "radio", required: true, options: ["Yes", "No"] },
-          { id: "it_allowances_ny", label: "Number of NY State Withholding Allowances", type: "number", placeholder: "e.g., 1", required: true },
-          { id: "it_allowances_nyc", label: "Number of NYC Withholding Allowances (if NYC resident)", type: "number", placeholder: "e.g., 1" },
-          { id: "it_allowances_yonkers", label: "Number of Yonkers Withholding Allowances (if Yonkers resident)", type: "number", placeholder: "e.g., 1" },
-          { id: "it_additional_ny", label: "Additional NY State Withholding per Pay Period", type: "text", placeholder: "$0.00" },
-          { id: "it_additional_nyc", label: "Additional NYC Withholding per Pay Period", type: "text", placeholder: "$0.00" },
-          { id: "it_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true },
-          { id: "it_date", label: "Date", type: "date", required: true },
+          // Residency gate — must be answered first; all other fields are gated on this
+          { id: "it_ny_resident", label: "Are you a New York State or City resident?", type: "radio", required: true, options: ["Yes", "No"], fullWidth: true },
+          // All remaining fields are gated: enabled only when it_ny_resident === "Yes"
+          { id: "it_first_name", label: "First Name & Middle Initial", type: "text", placeholder: "First M.", required: true, gateField: "it_ny_resident" },
+          { id: "it_last_name", label: "Last Name", type: "text", placeholder: "Last name", required: true, gateField: "it_ny_resident" },
+          { id: "it_ssn", label: "Social Security Number", type: "ssn", placeholder: "XXX-XX-XXXX", required: true, sensitive: true, gateField: "it_ny_resident" },
+          { id: "it_address", label: "Permanent Home Address", type: "text", placeholder: "Street address", required: true, fullWidth: true, gateField: "it_ny_resident" },
+          { id: "it_city", label: "City", type: "text", placeholder: "City", required: true, gateField: "it_ny_resident" },
+          { id: "it_state", label: "State", type: "select", required: true, options: US_STATES, gateField: "it_ny_resident" },
+          { id: "it_zip", label: "ZIP Code", type: "text", placeholder: "00000", required: true, gateField: "it_ny_resident" },
+          { id: "it_nyc_resident", label: "Are you a New York City resident?", type: "radio", required: true, options: ["Yes", "No"], gateField: "it_ny_resident" },
+          { id: "it_yonkers_resident", label: "Are you a Yonkers resident?", type: "radio", required: true, options: ["Yes", "No"], gateField: "it_ny_resident" },
+          { id: "it_allowances_ny", label: "Number of NY State Withholding Allowances", type: "number", placeholder: "e.g., 1", required: true, gateField: "it_ny_resident" },
+          { id: "it_allowances_nyc", label: "Number of NYC Withholding Allowances (if NYC resident)", type: "number", placeholder: "e.g., 1", gateField: "it_ny_resident" },
+          { id: "it_allowances_yonkers", label: "Number of Yonkers Withholding Allowances (if Yonkers resident)", type: "number", placeholder: "e.g., 1", gateField: "it_ny_resident" },
+          { id: "it_additional_ny", label: "Additional NY State Withholding per Pay Period", type: "text", placeholder: "$0.00", gateField: "it_ny_resident" },
+          { id: "it_additional_nyc", label: "Additional NYC Withholding per Pay Period", type: "text", placeholder: "$0.00", gateField: "it_ny_resident" },
+          { id: "it_signature", label: "Employee Signature", type: "signature", required: true, helpText: "Type your full legal name as your electronic signature.", fullWidth: true, gateField: "it_ny_resident" },
+          { id: "it_date", label: "Date", type: "date", required: true, gateField: "it_ny_resident" },
         ],
       },
     ],
@@ -1026,12 +1030,19 @@ function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, o
                 {group.title}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {group.fields.map(field => (
-                  <FormField key={field.id} field={field}
-                    value={localValues[field.id] || ""}
-                    onChange={v => handleFieldChange(field.id, v)}
-                    accentColor={chapter.accentColor} />
-                ))}
+                {group.fields.map(field => {
+                  // Compute disabled state: if field has a gateField, it's disabled unless gateField === "Yes"
+                  const isDisabled = field.gateField
+                    ? localValues[field.gateField] !== "Yes"
+                    : (field.disabled ?? false);
+                  return (
+                    <FormField key={field.id} field={field}
+                      value={localValues[field.id] || ""}
+                      onChange={v => handleFieldChange(field.id, v)}
+                      accentColor={chapter.accentColor}
+                      disabled={isDisabled} />
+                  );
+                })}
               </div>
             </motion.div>
           ))}
@@ -1079,13 +1090,12 @@ function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, o
 }
 
 // ── Form Field ────────────────────────────────────────────────────────────────
-function FormField({ field, value, onChange, accentColor }: {
-  field: FormFieldDef; value: string; onChange: (v: string) => void; accentColor: string;
+function FormField({ field, value, onChange, accentColor, disabled = false }: {
+  field: FormFieldDef; value: string; onChange: (v: string) => void; accentColor: string; disabled?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const isFullWidth = field.fullWidth || field.type === "textarea" || field.type === "checkbox" || field.type === "radio" || field.type === "signature";
-
   const inputStyle = {
     backgroundColor: AC.bgRaised,
     borderColor: focused ? accentColor : AC.border,
@@ -1094,9 +1104,8 @@ function FormField({ field, value, onChange, accentColor }: {
     boxShadow: focused ? `0 0 0 2px ${accentColor}22` : "none",
     colorScheme: "dark" as const,
   };
-
   return (
-    <div className={isFullWidth ? "sm:col-span-2" : ""}>
+    <div className={`${isFullWidth ? "sm:col-span-2" : ""} transition-opacity duration-200 ${disabled ? "opacity-35 pointer-events-none select-none" : ""}`}>
       <div className="flex items-center justify-between mb-1.5">
         <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: AC.fgMuted }}>
           {field.type !== "checkbox" && field.label}
