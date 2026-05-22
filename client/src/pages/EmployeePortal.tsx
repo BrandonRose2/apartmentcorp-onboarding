@@ -290,7 +290,8 @@ const CHAPTERS: Chapter[] = [
         id: "w4",
         title: "W-4 — Federal Employee's Withholding Certificate",
         fields: [
-          { id: "w4_first_name", label: "First Name & Middle Initial", type: "text", placeholder: "First M.", required: true },
+          { id: "w4_first_name", label: "First Name", type: "text", placeholder: "First name", required: true },
+          { id: "w4_middle_initial", label: "Middle Initial", type: "text", placeholder: "M" },
           { id: "w4_last_name", label: "Last Name", type: "text", placeholder: "Last name", required: true },
           { id: "w4_ssn", label: "Social Security Number", type: "ssn", placeholder: "XXX-XX-XXXX", required: true, sensitive: true },
           { id: "w4_address", label: "Address", type: "text", placeholder: "Street address", required: true, fullWidth: true },
