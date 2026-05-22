@@ -1089,7 +1089,7 @@ function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, o
   );
 }
 
-// ── Form Field ────────────────────────────────────────────────────────────────
+// ── Form Field ──────────────────────────────────────────────────────────────
 function FormField({ field, value, onChange, accentColor, disabled = false }: {
   field: FormFieldDef; value: string; onChange: (v: string) => void; accentColor: string; disabled?: boolean;
 }) {
@@ -1274,8 +1274,19 @@ function MyLoginsScreen({ onBack }: { onBack: () => void }) {
 // ── PropertyMAX Training Page ─────────────────────────────────────────────────
 const TRAINING_SECTIONS = [
   {
+    id: "phone_excellence",
+    title: "1. Phone Excellence Training",
+    items: [
+      { id: "phone-1", label: "Professional phone greeting standards" },
+      { id: "phone-2", label: "Handling leasing inquiries and scheduling tours" },
+      { id: "phone-3", label: "De-escalating resident complaints" },
+      { id: "phone-4", label: "Voicemail etiquette and follow-up protocol" },
+      { id: "phone-5", label: "Transferring calls and taking accurate messages" },
+    ],
+  },
+  {
     id: "dashboard",
-    title: "1. Dashboard & Overview",
+    title: "2. Dashboard & Overview",
     items: [
       { id: "dash-1", label: "Navigate the main dashboard" },
       { id: "dash-2", label: "Understand key metrics and KPIs" },
@@ -1284,7 +1295,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "requests",
-    title: "2. Requests",
+    title: "3. Requests",
     items: [
       { id: "req-1", label: "Create a new maintenance request" },
       { id: "req-2", label: "Assign and track open requests" },
@@ -1294,7 +1305,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "narratives",
-    title: "3. Narratives",
+    title: "4. Narratives",
     items: [
       { id: "narr-1", label: "Create a property narrative" },
       { id: "narr-2", label: "Edit and update existing narratives" },
@@ -1303,7 +1314,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "manuals",
-    title: "4. Manuals",
+    title: "5. Manuals",
     items: [
       { id: "man-1", label: "Browse the manuals library" },
       { id: "man-2", label: "Upload a new manual" },
@@ -1312,7 +1323,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "reports",
-    title: "5. Reports",
+    title: "6. Reports",
     items: [
       { id: "rep-1", label: "Generate a property report" },
       { id: "rep-2", label: "Export reports to PDF/Excel" },
@@ -1321,7 +1332,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "timeoff",
-    title: "6. Time Off",
+    title: "7. Time Off",
     items: [
       { id: "to-1", label: "Submit a time off request" },
       { id: "to-2", label: "View time off balance" },
@@ -1330,7 +1341,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "profile",
-    title: "7. My Profile",
+    title: "8. My Profile",
     items: [
       { id: "prof-1", label: "Update personal information" },
       { id: "prof-2", label: "Change notification preferences" },
@@ -1339,7 +1350,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "admin",
-    title: "8. Admin Settings",
+    title: "9. Admin Settings",
     items: [
       { id: "adm-1", label: "Manage user roles and permissions" },
       { id: "adm-2", label: "Configure property settings" },
@@ -1348,7 +1359,7 @@ const TRAINING_SECTIONS = [
   },
   {
     id: "integrations",
-    title: "9. Integrations & Quick Access",
+    title: "10. Integrations & Quick Access",
     items: [
       { id: "int-1", label: "Connect Yardi integration" },
       { id: "int-2", label: "Set up AppWork sync" },
