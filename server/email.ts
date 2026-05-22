@@ -145,6 +145,198 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   }
 }
 
+// ─── Completion Email ────────────────────────────────────────────────────────
+// TESTING MODE: all completion emails go only to Brandon.
+// When ready to go live, set TESTING_MODE = false and the full recipient list will be used.
+const TESTING_MODE = true;
+const BRANDON_EMAIL = "brandon@apartmentcorp.com";
+
+// Full recipient list (used when TESTING_MODE = false)
+// Operations
+// const MARC_EMAIL = "mam@apartmentcorp.com";
+// const NICOLE_EMAIL = "nicole@apartmentcorp.com";
+// const ETHAN_EMAIL = "ethan@apartmentcorp.com";
+// const ROBERT_EMAIL = "robert@apartmentcorp.com";
+// Accounting / Payroll
+// const HELEN_EMAIL = "helenita@apartmentcorp.com"; // Payroll & AP
+// const NONEE_EMAIL = "nonee@apartmentcorp.com";    // Accounting
+
+export interface CompletionEmailData {
+  newHireName: string;
+  newHireEmail: string;
+  position: string;
+  buildingName: string;
+  regionalManagerName: string;
+  regionalManagerEmail: string | null;
+  adminDashboardUrl: string;
+  approvedForms: { formType: string; label: string }[];
+}
+
+export async function sendCompletionEmail(data: CompletionEmailData): Promise<boolean> {
+  const {
+    newHireName,
+    newHireEmail,
+    position,
+    buildingName,
+    regionalManagerName,
+    regionalManagerEmail,
+    adminDashboardUrl,
+    approvedForms,
+  } = data;
+
+  // Determine recipients
+  const recipients: string[] = TESTING_MODE
+    ? [BRANDON_EMAIL]
+    : [
+        BRANDON_EMAIL,
+        // "mam@apartmentcorp.com",    // Marc - CEO
+        // "nicole@apartmentcorp.com", // Nicole - Operations Mgr
+        // "ethan@apartmentcorp.com",  // Ethan - Operations
+        // "robert@apartmentcorp.com", // Robert - SaaS Director
+        // "helenita@apartmentcorp.com", // Helen - Payroll & AP
+        // "nonee@apartmentcorp.com",  // Nonee - Accounting
+        // ...(regionalManagerEmail ? [regionalManagerEmail] : []),
+      ];
+
+  const formRows = approvedForms.map(f => `
+    <tr>
+      <td style="padding:10px 16px;border-bottom:1px solid #e2e8f0;color:#2d3748;font-size:14px;">&#10003; ${f.label}</td>
+    </tr>`).join("");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding Complete — ${newHireName}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="640" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#1a2744 0%,#2d4a8a 100%);padding:36px 48px;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Onboarding Complete</h1>
+              <p style="margin:6px 0 0;color:#a8c4f0;font-size:14px;">ApartmentCorp New Hire Report</p>
+            </td>
+          </tr>
+
+          <!-- New Hire Summary -->
+          <tr>
+            <td style="padding:36px 48px 24px;">
+              <p style="margin:0 0 20px;color:#1a2744;font-size:18px;font-weight:600;">New Hire Summary</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:28px;">
+                <tr style="background:#f8fafc;">
+                  <td style="padding:10px 16px;color:#718096;font-size:13px;font-weight:600;width:140px;">NAME</td>
+                  <td style="padding:10px 16px;color:#2d3748;font-size:14px;">${newHireName}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 16px;color:#718096;font-size:13px;font-weight:600;border-top:1px solid #e2e8f0;">EMAIL</td>
+                  <td style="padding:10px 16px;color:#2d3748;font-size:14px;border-top:1px solid #e2e8f0;">${newHireEmail}</td>
+                </tr>
+                <tr style="background:#f8fafc;">
+                  <td style="padding:10px 16px;color:#718096;font-size:13px;font-weight:600;border-top:1px solid #e2e8f0;">POSITION</td>
+                  <td style="padding:10px 16px;color:#2d3748;font-size:14px;border-top:1px solid #e2e8f0;">${position}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 16px;color:#718096;font-size:13px;font-weight:600;border-top:1px solid #e2e8f0;">PROPERTY</td>
+                  <td style="padding:10px 16px;color:#2d3748;font-size:14px;border-top:1px solid #e2e8f0;">${buildingName}</td>
+                </tr>
+                <tr style="background:#f8fafc;">
+                  <td style="padding:10px 16px;color:#718096;font-size:13px;font-weight:600;border-top:1px solid #e2e8f0;">REG. MANAGER</td>
+                  <td style="padding:10px 16px;color:#2d3748;font-size:14px;border-top:1px solid #e2e8f0;">${regionalManagerName || "Not assigned"}</td>
+                </tr>
+              </table>
+
+              <!-- Approved Forms -->
+              <p style="margin:0 0 12px;color:#1a2744;font-size:16px;font-weight:600;">Approved Documents</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:28px;">
+                ${formRows}
+              </table>
+
+              <!-- Division Actions -->
+              <p style="margin:0 0 12px;color:#1a2744;font-size:16px;font-weight:600;">Action Required by Division</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td style="padding:14px 16px;background:#fff8f0;border-left:4px solid #ed8936;border-radius:0 8px 8px 0;margin-bottom:8px;">
+                    <p style="margin:0;color:#c05621;font-weight:700;font-size:13px;">OPERATIONS (Brandon, Ethan, Robert, Nicole)</p>
+                    <p style="margin:4px 0 0;color:#4a5568;font-size:13px;">Review Employment Application &amp; Company Agreements in the Admin Dashboard.</p>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td style="padding:14px 16px;background:#f0fff4;border-left:4px solid #38a169;border-radius:0 8px 8px 0;margin-bottom:8px;">
+                    <p style="margin:0;color:#276749;font-weight:700;font-size:13px;">ACCOUNTING / PAYROLL (Helen, Nonee)</p>
+                    <p style="margin:4px 0 0;color:#4a5568;font-size:13px;">Review Direct Deposit, W-4, and IT-2104 forms in the Admin Dashboard.</p>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td style="padding:14px 16px;background:#ebf8ff;border-left:4px solid #3182ce;border-radius:0 8px 8px 0;margin-bottom:8px;">
+                    <p style="margin:0;color:#2c5282;font-weight:700;font-size:13px;">REGIONAL MANAGER (${regionalManagerName || "Not assigned"})</p>
+                    <p style="margin:4px 0 0;color:#4a5568;font-size:13px;">Review I-9 and overall onboarding package for ${buildingName}.</p>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td style="padding:14px 16px;background:#faf5ff;border-left:4px solid #805ad5;border-radius:0 8px 8px 0;">
+                    <p style="margin:0;color:#553c9a;font-weight:700;font-size:13px;">EXECUTIVE (Marc)</p>
+                    <p style="margin:4px 0 0;color:#4a5568;font-size:13px;">New hire onboarding complete — no immediate action required.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td align="center">
+                    <a href="${adminDashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#1a2744 0%,#2d4a8a 100%);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:15px;font-weight:600;">Open Admin Dashboard &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+
+              ${TESTING_MODE ? `<p style="margin:0;padding:10px 16px;background:#fffbeb;border:1px solid #f6e05e;border-radius:6px;color:#744210;font-size:12px;"><strong>Testing Mode:</strong> This email was sent only to brandon@apartmentcorp.com. Set TESTING_MODE = false in server/email.ts to enable full distribution.</p>` : ""}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8fafc;padding:20px 48px;border-top:1px solid #e2e8f0;text-align:center;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">&copy; ${new Date().getFullYear()} ApartmentCorp. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: recipients,
+      replyTo: REPLY_TO,
+      subject: `[Onboarding Complete] ${newHireName} — ${buildingName}`,
+      html,
+    });
+    if (result.error) {
+      console.error("[Email] Failed to send completion email:", result.error);
+      return false;
+    }
+    console.log("[Email] Completion email sent | ID:", result.data?.id, "| Recipients:", recipients);
+    return true;
+  } catch (err) {
+    console.error("[Email] Exception sending completion email:", err);
+    return false;
+  }
+}
+
 export async function validateResendApiKey(): Promise<boolean> {
   try {
     const domains = await resend.domains.list();

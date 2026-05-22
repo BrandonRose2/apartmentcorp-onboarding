@@ -36,6 +36,7 @@ export const newHires = mysqlTable("new_hires", {
   ]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   lastLogin: timestamp("lastLogin").defaultNow().notNull(),
+  completionEmailSentAt: timestamp("completionEmailSentAt"),
 });
 
 export type NewHire = typeof newHires.$inferSelect;

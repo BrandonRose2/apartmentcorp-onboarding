@@ -70,3 +70,7 @@
 - [x] Update training router: one signature per section (not per item)
 - [x] Update training UI: check all items in section, then sign once to complete entire section
 - [x] Add Phone Excellence Training as section 1, renumber all sections 1-10
+- [x] Add COMPLETION_EMAIL_RECIPIENTS config with all upper management emails
+- [x] Build HTML completion email template (per-division sections)
+- [x] Wire completion trigger in reviewSubmission procedure (fires when all chapters approved)
+- [x] Send email from brandon@apartmentcorp.com via Resend

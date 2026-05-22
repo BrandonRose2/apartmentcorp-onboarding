@@ -1,0 +1,1 @@
+ALTER TABLE `new_hires` ADD `completionEmailSentAt` timestamp;

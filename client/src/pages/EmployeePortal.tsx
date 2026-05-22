@@ -12,7 +12,7 @@ import { NewHireAuth } from "@/components/NewHireAuth";
 import { trpc } from "@/lib/trpc";
 
 
-// ── Brand constants ───────────────────────────────────────────────────────────
+// -- Brand constants --
 const AC = {
   bg:       "oklch(0.13 0.06 258)",
   bgCard:   "oklch(0.18 0.065 258)",
@@ -29,7 +29,7 @@ const AC = {
   body:    "'Inter', 'Helvetica Neue', Arial, sans-serif",
 };
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// -- Types --
 export interface Chapter {
   id: string;
   number: number;
@@ -66,7 +66,7 @@ export interface FormFieldDef {
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-// ── Chapter data ──────────────────────────────────────────────────────────────
+// -- Chapter data --
 const CHAPTERS: Chapter[] = [
   {
     id: "employment_application",
@@ -454,7 +454,7 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-// ── Main Component ────────────────────────────────────────────────name──────────────
+// -- Main Component name --
 function EmployeePortalContent() {
   const [employeeName, setEmployeeName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -669,7 +669,7 @@ function EmployeePortalContent() {
   );
 }
 
-// ── Welcome Screen ────────────────────────────────────────────────────────────
+// -- Welcome Screen --
 function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSubmit }: {
   nameInput: string; dateInput: string;
   onNameChange: (v: string) => void; onDateChange: (v: string) => void;
@@ -774,7 +774,7 @@ function WelcomeScreen({ nameInput, dateInput, onNameChange, onDateChange, onSub
   );
 }
 
-// ── Chapters Screen ───────────────────────────────────────────────────────────
+// -- Chapters Screen --
 function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, totalChapters, onStartChapter, onViewLogins, onViewTraining }: {
   employeeName: string; startDate: string; chapters: Chapter[];
   completedChapters: number; totalChapters: number; onStartChapter: (id: string) => void;
@@ -874,7 +874,7 @@ function ChaptersScreen({ employeeName, startDate, chapters, completedChapters, 
   );
 }
 
-// ── Chapter Card ──────────────────────────────────────────────────────────────
+// -- Chapter Card --
 function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: number; onStart: (id: string) => void }) {
   const isLocked = chapter.status === "locked";
   const isComplete = chapter.status === "complete" || chapter.status === "submitted";
@@ -944,7 +944,7 @@ function ChapterCard({ chapter, index, onStart }: { chapter: Chapter; index: num
   );
 }
 
-// ── Form Screen ───────────────────────────────────────────────────────────────
+// -- Form Screen --
 function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, onComplete }: {
   chapter: Chapter; formValues: Record<string, string>;
   onFieldChange: (fieldId: string, value: string) => void;
@@ -1089,7 +1089,7 @@ function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, o
   );
 }
 
-// ── Form Field ──────────────────────────────────────────────────────────────
+// -- Form Field --
 function FormField({ field, value, onChange, accentColor, disabled = false }: {
   field: FormFieldDef; value: string; onChange: (v: string) => void; accentColor: string; disabled?: boolean;
 }) {
@@ -1189,7 +1189,7 @@ function FormField({ field, value, onChange, accentColor, disabled = false }: {
   );
 }
 
-// ── My Logins Screen ────────────────────────────────────────────────────────
+// -- My Logins Screen --
 function MyLoginsScreen({ onBack }: { onBack: () => void }) {
   const { data: credentials = [], isLoading } = trpc.credentials.getMyCredentials.useQuery();
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
@@ -1271,7 +1271,7 @@ function MyLoginsScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ── PropertyMAX Training Page ─────────────────────────────────────────────────
+// -- PropertyMAX Training Page --
 const TRAINING_SECTIONS = [
   {
     id: "phone_excellence",
@@ -1525,7 +1525,7 @@ function PropertyMaxTrainingPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ── Auth-gated export ─────────────────────────────────────────────────────────
+// -- Auth-gated export --
 export default function EmployeePortal() {
   return (
     <NewHireAuth>

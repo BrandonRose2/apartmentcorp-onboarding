@@ -27,7 +27,7 @@ import {
   upsertFormSubmission,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
-import { sendWelcomeEmail } from "./email";
+import { sendCompletionEmail, sendWelcomeEmail } from "./email";
 
 const NEW_HIRE_COOKIE = "nh_session";
 
@@ -327,6 +327,62 @@ export const appRouter = router({
         });
         if (input.action === "approved") {
           await updateNewHireAssignment(input.newHireId, { onboardingStatus: "hr_approved" });
+
+          // Check if ALL required chapters are now approved — if so, send completion email
+          const REQUIRED_FORM_TYPES = [
+            "employment_application",
+            "confidentiality_agreement",
+            "tracking_agreement",
+            "policies_acknowledgment",
+            "direct_deposit",
+            "w4",
+            "i9",
+          ];
+          const FORM_LABELS: Record<string, string> = {
+            employment_application: "Employment Application",
+            confidentiality_agreement: "Confidentiality Agreement",
+            tracking_agreement: "GPS / Tracking Agreement",
+            policies_acknowledgment: "Policies Acknowledgment",
+            direct_deposit: "Direct Deposit Authorization",
+            w4: "Federal W-4",
+            it2104: "NY IT-2104 Withholding Certificate",
+            i9: "I-9 Employment Eligibility Verification",
+            maintenance_test: "Maintenance Skills Test",
+          };
+
+          const allSubs = await getFormSubmissionsByNewHire(input.newHireId);
+          const approvedTypes = new Set(
+            allSubs
+              .filter(s => s.status === "hr_approved" || s.status === "brandon_approved")
+              .map(s => s.formType)
+          );
+          const allRequiredApproved = REQUIRED_FORM_TYPES.every(t => approvedTypes.has(t));
+
+          if (allRequiredApproved) {
+            const hire = await getNewHireById(input.newHireId);
+            if (hire?.completionEmailSentAt) {
+              // Idempotency: only send once
+              console.log("[Completion] Email already sent for hire", input.newHireId, "- skipping");
+            } else {
+              const building = hire?.buildingId ? await getBuildingById(hire.buildingId) : null;
+              const approvedForms = [...approvedTypes].map(ft => ({ formType: ft, label: FORM_LABELS[ft] ?? ft }));
+              const sent = await sendCompletionEmail({
+                newHireName: hire?.email?.split("@")[0] ?? "New Hire",
+                newHireEmail: hire?.email ?? "",
+                position: hire?.position ?? "Not specified",
+                buildingName: building?.name ?? "Not assigned",
+                regionalManagerName: building?.regionalManagerName ?? "Not assigned",
+                regionalManagerEmail: building?.regionalManagerEmail ?? null,
+                adminDashboardUrl: "https://aptonboard-pxsj4nvm.manus.space",
+                approvedForms,
+              });
+              if (sent) {
+                const db = getDb();
+                await db.update(newHires).set({ completionEmailSentAt: new Date() }).where(eq(newHires.id, input.newHireId));
+                console.log("[Completion] Email sent and recorded for hire", input.newHireId);
+              }
+            }
+          }
         }
         return { success: true };
       }),
