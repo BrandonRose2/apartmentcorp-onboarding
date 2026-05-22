@@ -271,15 +271,36 @@ export const appRouter = router({
 
   // ─── Admin ──────────────────────────────────────────────────────────────────
   admin: router({
-    // List all new hires with their building info
+    // List all new hires with their building info and name from employment application
     listNewHires: publicProcedure.query(async () => {
       const hires = await getAllNewHires();
       const allBuildings = await getAllBuildings();
       const buildingMap = new Map(allBuildings.map(b => [b.id, b]));
-      return hires.map(h => ({
-        ...h,
-        building: h.buildingId ? buildingMap.get(h.buildingId) ?? null : null,
+
+      // Pull firstName/lastName from employment_application formData for each hire
+      const hiresWithNames = await Promise.all(hires.map(async (h) => {
+        const subs = await getFormSubmissionsByNewHire(h.id);
+        const appSub = subs.find(s => s.formType === "employment_application");
+        let firstName = "";
+        let lastName = "";
+        if (appSub?.formData) {
+          const fd = appSub.formData as Record<string, unknown>;
+          firstName = (fd.firstName as string) ?? "";
+          lastName = (fd.lastName as string) ?? "";
+        }
+        // Fall back to email prefix if no name found
+        if (!firstName && !lastName) {
+          firstName = h.email.split("@")[0];
+        }
+        return {
+          ...h,
+          firstName,
+          lastName,
+          building: h.buildingId ? buildingMap.get(h.buildingId) ?? null : null,
+        };
       }));
+
+      return hiresWithNames;
     }),
 
     // Assign building and position to a new hire
@@ -402,6 +423,90 @@ export const appRouter = router({
           }
         }
         return { success: true };
+      }),
+
+    // Bulk approve or reject all submitted forms for a new hire
+    bulkReview: publicProcedure
+      .input(z.object({
+        newHireId: z.number(),
+        action: z.enum(["approved", "rejected"]),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const allSubs = await getFormSubmissionsByNewHire(input.newHireId);
+        const pending = allSubs.filter(s => s.status === "submitted" || s.status === "pending");
+        if (pending.length === 0) return { updated: 0 };
+
+        const newStatus = input.action === "approved" ? "hr_approved" : "hr_rejected";
+        for (const sub of pending) {
+          await updateFormSubmissionStatus(sub.id, newStatus as any);
+          await createFormApproval({
+            submissionId: sub.id,
+            newHireId: input.newHireId,
+            approverName: "Brandon",
+            approverEmail: "brandon@apartmentcorp.com",
+            approverRole: "hr",
+            action: input.action,
+            notes: input.notes ?? null,
+          });
+        }
+
+        if (input.action === "approved") {
+          await updateNewHireAssignment(input.newHireId, { onboardingStatus: "hr_approved" });
+
+          const REQUIRED_FORM_TYPES = [
+            "employment_application",
+            "confidentiality_agreement",
+            "tracking_agreement",
+            "policies_acknowledgment",
+            "direct_deposit",
+            "w4",
+            "i9",
+          ];
+          const FORM_LABELS: Record<string, string> = {
+            employment_application: "Employment Application",
+            confidentiality_agreement: "Confidentiality Agreement",
+            tracking_agreement: "GPS / Tracking Agreement",
+            policies_acknowledgment: "Policies Acknowledgment",
+            direct_deposit: "Direct Deposit Authorization",
+            w4: "Federal W-4",
+            it2104: "NY IT-2104 Withholding Certificate",
+            i9: "I-9 Employment Eligibility Verification",
+            maintenance_test: "Maintenance Skills Test",
+          };
+
+          const updatedSubs = await getFormSubmissionsByNewHire(input.newHireId);
+          const approvedTypes = new Set(
+            updatedSubs
+              .filter(s => s.status === "hr_approved" || s.status === "brandon_approved")
+              .map(s => s.formType)
+          );
+          const allRequiredApproved = REQUIRED_FORM_TYPES.every(t => approvedTypes.has(t));
+
+          if (allRequiredApproved) {
+            const hire = await getNewHireById(input.newHireId);
+            if (!hire?.completionEmailSentAt) {
+              const building = hire?.buildingId ? await getBuildingById(hire.buildingId) : null;
+              const approvedForms = [...approvedTypes].map(ft => ({ formType: ft, label: FORM_LABELS[ft] ?? ft }));
+              const sent = await sendCompletionEmail({
+                newHireName: hire?.email?.split("@")[0] ?? "New Hire",
+                newHireEmail: hire?.email ?? "",
+                position: hire?.position ?? "Not specified",
+                buildingName: building?.name ?? "Not assigned",
+                regionalManagerName: building?.regionalManagerName ?? "Not assigned",
+                regionalManagerEmail: building?.regionalManagerEmail ?? null,
+                adminDashboardUrl: "https://aptonboard-pxsj4nvm.manus.space",
+                approvedForms,
+              });
+              if (sent) {
+                const db = getDb();
+                await db.update(newHires).set({ completionEmailSentAt: new Date() }).where(eq(newHires.id, input.newHireId));
+              }
+            }
+          }
+        }
+
+        return { updated: pending.length };
       }),
 
     // Update new hire onboarding status directly

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, new_hire_id, form_type, status, JSON_EXTRACT(form_data, '$.firstName') as firstName, JSON_EXTRACT(form_data, '$.lastName') as lastName, JSON_EXTRACT(form_data, '$.fullName') as fullName FROM form_submissions WHERE form_type = 'employment_application' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT id, new_hire_id, form_type, status, JSON_EXTRACT(form_data, '$.firstName') as firstName, JSON_EXTRACT(form_data, '$.lastName') as lastName, JSON_EXTRACT(form_data, '$.fullName') as fullName FROM form_submissions WHERE form_type = 'employment_application' LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'form_type' in 'where clause'"
+  ]
+}

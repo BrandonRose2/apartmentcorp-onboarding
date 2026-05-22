@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useCallback } from "react";
-import { Upload, X, FileText, Download, User, ChevronDown, CheckCircle2, Clock, XCircle, Eye } from "lucide-react";
+import { Upload, X, FileText, Download, User, ChevronDown, CheckCircle2, Clock, XCircle, Eye, CheckCheck, Ban, AlertTriangle } from "lucide-react";
 import { DOC_CATEGORIES, PHASES, type UploadedFile } from "@/lib/onboardingData";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
@@ -67,9 +67,33 @@ export function DocumentHubTab({
 }: DocumentHubTabProps) {
   const [selectedHireId, setSelectedHireId] = useState<number | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"approved" | "rejected" | null>(null);
 
   // Fetch all new hires for the selector
   const { data: hires } = trpc.admin.listNewHires.useQuery();
+
+  const utils = trpc.useUtils();
+
+  // Bulk review mutation
+  const bulkReview = trpc.admin.bulkReview.useMutation({
+    onSuccess: (result, vars) => {
+      if (result.updated === 0) {
+        toast.info("No pending forms to update.");
+      } else {
+        toast.success(
+          vars.action === "approved"
+            ? `✅ ${result.updated} form${result.updated !== 1 ? "s" : ""} approved`
+            : `❌ ${result.updated} form${result.updated !== 1 ? "s" : ""} rejected`
+        );
+      }
+      utils.admin.getNewHireSubmissions.invalidate({ newHireId: selectedHireId! });
+      setConfirmAction(null);
+    },
+    onError: () => {
+      toast.error("Bulk action failed. Please try again.");
+      setConfirmAction(null);
+    },
+  });
 
   // Fetch submissions for the selected hire
   const { data: hireData, isLoading: loadingSubmissions } = trpc.admin.getNewHireSubmissions.useQuery(
@@ -96,6 +120,10 @@ export function DocumentHubTab({
       }
     }
   }
+
+  const pendingCount = hireData?.submissions.filter(
+    (s) => s.status === "submitted" || s.status === "pending"
+  ).length ?? 0;
 
   const handleExportSummary = () => {
     const lines: string[] = [

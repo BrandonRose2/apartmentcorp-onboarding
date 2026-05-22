@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, newHireId, formType, JSON_EXTRACT(formData, '$.firstName') as firstName, JSON_EXTRACT(formData, '$.lastName') as lastName, JSON_EXTRACT(formData, '$.fullName') as fullName, status FROM form_submissions WHERE formType = 'employment_application' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT id, newHireId, formType, JSON_EXTRACT(formData, '$.firstName') as firstName, JSON_EXTRACT(formData, '$.lastName') as lastName, JSON_EXTRACT(formData, '$.fullName') as fullName, status FROM form_submissions WHERE formType = 'employment_application' LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "newHireId": "30001",
+      "formType": "employment_application",
+      "firstName": "\"Brandon\"",
+      "lastName": "\"Rose\"",
+      "fullName": "NULL",
+      "status": "hr_approved"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnewHireId\tformType\tfirstName\tlastName\tfullName\tstatus\n1\t30001\temployment_application\t\"Brandon\"\t\"Rose\"\tNULL\thr_approved\n",
+  "stderr": "",
+  "execution_time_ms": 275
+}
