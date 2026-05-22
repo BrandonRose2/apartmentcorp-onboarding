@@ -233,7 +233,7 @@ export const PHASES: Phase[] = [
           },
           {
             id: "3.2",
-            label: "Complete role-specific software training (e.g., ShowMojo, AppFolio, or Maintenance portal)",
+            label: "Complete role-specific software training (e.g., PropertyMAX, OneSite, or Maintenance portal)",
             required: true,
           },
           {
@@ -370,6 +370,34 @@ export const PHASES: Phase[] = [
 export const DOC_CATEGORIES: Omit<DocCategory, "files">[] = [
   // Phase 1
   {
+    id: "doc-employment-application",
+    icon: "📝",
+    title: "Employment Application",
+    description: "Completed new hire employment application form",
+    phaseId: "phase-1",
+  },
+  {
+    id: "doc-confidentiality",
+    icon: "🔒",
+    title: "Confidentiality Agreement",
+    description: "Signed confidentiality and non-disclosure agreement",
+    phaseId: "phase-1",
+  },
+  {
+    id: "doc-tracking",
+    icon: "📍",
+    title: "GPS / Tracking Agreement",
+    description: "Signed GPS and device tracking acknowledgment",
+    phaseId: "phase-1",
+  },
+  {
+    id: "doc-policies",
+    icon: "📋",
+    title: "Policies Acknowledgment",
+    description: "Signed acknowledgment of company policies and handbook",
+    phaseId: "phase-1",
+  },
+  {
     id: "doc-i9",
     icon: "🪪",
     title: "I-9 Identity Documents",
@@ -395,6 +423,13 @@ export const DOC_CATEGORIES: Omit<DocCategory, "files">[] = [
     icon: "📋",
     title: "Employee Handbook Acknowledgment",
     description: "Signed acknowledgment that you have read and understood the Employee Handbook",
+    phaseId: "phase-1",
+  },
+  {
+    id: "doc-it2104",
+    icon: "🗂️",
+    title: "NY IT-2104 Withholding Form",
+    description: "New York State Employee's Withholding Allowance Certificate",
     phaseId: "phase-1",
   },
   // Phase 2
@@ -432,6 +467,13 @@ export const DOC_CATEGORIES: Omit<DocCategory, "files">[] = [
     icon: "💻",
     title: "Software Training Completion",
     description: "Completion records for Yardi/RealPage and role-specific software training",
+    phaseId: "phase-3",
+  },
+  {
+    id: "doc-maintenance-test",
+    icon: "🔧",
+    title: "Maintenance Skills Test",
+    description: "Completed maintenance skills assessment (required for maintenance staff)",
     phaseId: "phase-3",
   },
   // Phase 4

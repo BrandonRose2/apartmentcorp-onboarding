@@ -38,6 +38,7 @@ export const newHires = mysqlTable("new_hires", {
   lastLogin: timestamp("lastLogin").defaultNow().notNull(),
   firstLoginAt: timestamp("firstLoginAt"),
   completionEmailSentAt: timestamp("completionEmailSentAt"),
+  provisioningEmailSentAt: timestamp("provisioningEmailSentAt"),
 });
 
 export type NewHire = typeof newHires.$inferSelect;
@@ -85,6 +86,8 @@ export const formSubmissions = mysqlTable("form_submissions", {
     "hr_rejected",
   ]).default("draft").notNull(),
   submittedAt: timestamp("submittedAt"),
+  pdfUrl: varchar("pdfUrl", { length: 1000 }),
+  pdfGeneratedAt: timestamp("pdfGeneratedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -111,20 +114,24 @@ export type InsertFormApproval = typeof formApprovals.$inferInsert;
 // ─── New Hire Platform Credentials ───────────────────────────────────────────
 // Ethan checks which platforms are required and enters credentials per new hire
 export const ALL_PLATFORMS = [
+  "PropertyMAX.ai",
+  "AppWorks",
+  "MyLoneWorkers.com",
+  "ConnectUC",
+  "SamePage",
+  "OneSite",
   "Paychex",
-  "AppWork",
   "Connecteam",
-  "Sensor",
   "Phone Portal",
   "Yardi",
   "Inspections",
+  "Sensor",
   "Genesis",
   "Webster",
   "B of A",
   "Purchasing",
   "Vacancy",
   "AI Bot",
-  "OneSite",
 ] as const;
 
 export type Platform = (typeof ALL_PLATFORMS)[number];

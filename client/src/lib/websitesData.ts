@@ -71,21 +71,6 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
     notes: "Complete the Yardi Level 1 training module before your first login. Contact your manager if you need a role-specific permission set.",
     accessLevel: "All Staff",
   },
-  {
-    id: "resident-portal",
-    name: "Resident Portal (AppFolio)",
-    url: "https://www.appfolio.com",
-    icon: "🚪",
-    category: "property-mgmt",
-    description: "Resident-facing portal for online rent payments, maintenance requests, and lease documents. Staff access for managing submissions.",
-    loginInstructions: "Staff access is granted through your Yardi credentials. Use the Admin login link, not the resident login.",
-    fields: [
-      { label: "Staff Admin URL", value: "https://apartmentcorp.appfolio.com/admin" },
-      { label: "Username", value: "Your company email" },
-      { label: "Password", value: "Same as Yardi (SSO enabled)", sensitive: true },
-    ],
-    accessLevel: "Leasing",
-  },
 
   // ── HR & Payroll ─────────────────────────────────────────────────────────
   {
@@ -137,22 +122,53 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
     ],
     accessLevel: "All Staff",
   },
+  {
+    id: "connectuc",
+    name: "ConnectUC",
+    url: "https://www.connectuc.com",
+    icon: "📞",
+    category: "communication",
+    description: "Unified communications platform for internal calling, messaging, and team collaboration across all ApartmentCorp properties.",
+    loginInstructions: "Your ConnectUC account will be provisioned by IT on Day 1. Sign in with your company email and the temporary password provided.",
+    fields: [
+      { label: "Login URL", value: "https://app.connectuc.com" },
+      { label: "Username", value: "Your company email" },
+      { label: "Password", value: "Provided by IT on Day 1", sensitive: true },
+    ],
+    notes: "ConnectUC is used for all internal phone calls and team messaging. Download the mobile app to stay connected in the field.",
+    accessLevel: "All Staff",
+  },
+  {
+    id: "samepage",
+    name: "SamePage",
+    url: "https://www.samepage.io",
+    icon: "📄",
+    category: "communication",
+    description: "Team collaboration and project management platform for sharing files, tasks, and updates across departments.",
+    loginInstructions: "You will receive a SamePage invitation email from your manager. Accept the invite and set your password to join your team workspace.",
+    fields: [
+      { label: "Login URL", value: "https://samepage.io/login" },
+      { label: "Invitation", value: "Sent by your manager via email" },
+    ],
+    notes: "SamePage is used for project tracking, document sharing, and cross-team coordination. Check your workspace daily for updates.",
+    accessLevel: "All Staff",
+  },
 
   // ── Maintenance & Operations ─────────────────────────────────────────────
   {
-    id: "maintenance-portal",
-    name: "MaintainX (Work Orders)",
-    url: "https://www.getmaintainx.com",
-    icon: "🔧",
+    id: "myloneworkers",
+    name: "MyLoneWorkers.com",
+    url: "https://www.myloneworkers.com",
+    icon: "🦺",
     category: "maintenance",
-    description: "Work order management system for submitting, tracking, and closing maintenance requests across all properties.",
-    loginInstructions: "Your maintenance supervisor will add you to MaintainX. You will receive an email invitation. Download the mobile app for field use.",
+    description: "Lone worker safety monitoring platform for maintenance staff working alone on-site. Provides check-in, SOS alerts, and location tracking.",
+    loginInstructions: "Your maintenance supervisor will create your MyLoneWorkers account. You will receive an invitation email. Download the mobile app before your first solo shift.",
     fields: [
-      { label: "Web URL", value: "https://app.getmaintainx.com" },
+      { label: "Web URL", value: "https://app.myloneworkers.com" },
       { label: "Invitation", value: "Sent by your maintenance supervisor" },
-      { label: "Mobile App", value: "MaintainX — available on iOS and Android" },
+      { label: "Mobile App", value: "MyLoneWorkers — available on iOS and Android" },
     ],
-    notes: "All work orders must be logged and closed in MaintainX. Do not close a work order without a completion note and photo.",
+    notes: "You must check in at the start of every solo maintenance shift and check out when complete. Failure to check in triggers a supervisor alert.",
     accessLevel: "Maintenance",
   },
   {
@@ -173,20 +189,6 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
 
   // ── Marketing & Leasing ──────────────────────────────────────────────────
   {
-    id: "showmojo",
-    name: "ShowMojo (Showing Scheduler)",
-    url: "https://showmojo.com",
-    icon: "🗓️",
-    category: "marketing",
-    description: "Automated showing scheduler for prospective residents. Syncs with Yardi availability.",
-    loginInstructions: "Your leasing manager will create your ShowMojo account. You will receive an invitation email.",
-    fields: [
-      { label: "URL", value: "https://app.showmojo.com" },
-      { label: "Invitation", value: "Sent by your leasing manager" },
-    ],
-    accessLevel: "Leasing",
-  },
-  {
     id: "apartments-com",
     name: "Apartments.com (Listing Management)",
     url: "https://www.apartments.com",
@@ -201,7 +203,7 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
     accessLevel: "Leasing",
   },
 
-  // ── IT & Equipment ────────────────────────────────────────────────────────────────────────────────
+  // ── IT & Equipment ────────────────────────────────────────────────────────
   {
     id: "vmware",
     name: "VMware Horizon (Virtual Desktop)",
@@ -222,33 +224,19 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
 
   // ── Finance & Accounting ─────────────────────────────────────────────────
   {
-    id: "quickbooks",
-    name: "QuickBooks Online",
-    url: "https://quickbooks.intuit.com",
+    id: "finance-portal",
+    name: "ApartmentCorp Finance Portal",
+    url: "https://finance.apartmentcorp.com",
     icon: "📊",
     category: "finance",
-    description: "Accounting and financial reporting platform. Used by Accounting team for AP/AR, expense tracking, and financial statements.",
-    loginInstructions: "Access is restricted to Accounting staff and Property Managers. Your controller will invite you if your role requires access.",
+    description: "Internal finance and accounting portal for AP/AR, expense tracking, and financial reporting. Used by Accounting team and Property Managers.",
+    loginInstructions: "Access is restricted to Accounting staff and Property Managers. Your controller will provision your account if your role requires access.",
     fields: [
-      { label: "URL", value: "https://app.qbo.intuit.com" },
-      { label: "Invitation", value: "Sent by the Controller if your role requires access" },
+      { label: "URL", value: "https://finance.apartmentcorp.com" },
+      { label: "Username", value: "Your company email" },
+      { label: "Access Request", value: "Contact your controller or IT if access is required" },
     ],
     notes: "Do not process any transactions without approval from your supervisor. All expense reports must be submitted through Paylocity first.",
     accessLevel: "Accounting",
-  },
-  {
-    id: "expense-portal",
-    name: "Concur (Expense Reports)",
-    url: "https://www.concur.com",
-    icon: "🧾",
-    category: "finance",
-    description: "Submit and track expense reimbursements for business-related purchases.",
-    loginInstructions: "Log in with your company email via SSO. Your account is auto-provisioned when your Paylocity profile is active.",
-    fields: [
-      { label: "URL", value: "https://us.concursolutions.com" },
-      { label: "Username", value: "Your company email (SSO)" },
-    ],
-    notes: "Receipts must be submitted within 30 days of the expense. Expenses over $500 require manager pre-approval.",
-    accessLevel: "All Staff",
   },
 ];
