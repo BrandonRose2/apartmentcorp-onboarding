@@ -1,0 +1,28 @@
+{
+  "query": "SELECT nh.id, nh.email, nh.onboardingStatus, fs.formType, fs.status, JSON_EXTRACT(fs.formData, '$.firstName') as firstName, JSON_EXTRACT(fs.formData, '$.lastName') as lastName FROM new_hires nh LEFT JOIN form_submissions fs ON nh.id = fs.newHireId AND fs.formType = 'employment_application' ORDER BY nh.id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT nh.id, nh.email, nh.onboardingStatus, fs.formType, fs.status, JSON_EXTRACT(fs.formData, '$.firstName') as firstName, JSON_EXTRACT(fs.formData, '$.lastName') as lastName FROM new_hires nh LEFT JOIN form_submissions fs ON nh.id = fs.newHireId AND fs.formType = 'employment_application' ORDER BY nh.id;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "robert@apartmentcorp.com",
+      "onboardingStatus": "pending",
+      "formType": "NULL",
+      "status": "NULL",
+      "firstName": "NULL",
+      "lastName": "NULL"
+    },
+    {
+      "id": "30001",
+      "email": "brandon@apartmentcorp.com",
+      "onboardingStatus": "hr_approved",
+      "formType": "employment_application",
+      "status": "hr_approved",
+      "firstName": "\"Brandon\"",
+      "lastName": "\"Rose\""
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tonboardingStatus\tformType\tstatus\tfirstName\tlastName\n1\trobert@apartmentcorp.com\tpending\tNULL\tNULL\tNULL\tNULL\n30001\tbrandon@apartmentcorp.com\thr_approved\temployment_application\thr_approved\t\"Brandon\"\t\"Rose\"\n",
+  "stderr": "",
+  "execution_time_ms": 277
+}

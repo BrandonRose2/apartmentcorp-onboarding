@@ -270,8 +270,11 @@ export function DocumentHubTab({
                       {hire.firstName[0]}{hire.lastName[0]}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate" style={{ color: "oklch(0.22 0.06 250)" }}>
-                        {hire.firstName} {hire.lastName}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium truncate" style={{ color: "oklch(0.22 0.06 250)" }}>
+                          {hire.firstName} {hire.lastName}
+                        </span>
+                        <HireStatusBadge hire={hire as any} compact />
                       </div>
                       <div className="text-xs truncate" style={{ color: "oklch(0.55 0.03 250)" }}>
                         {hire.position ?? "No position"} · {(hire as any).building?.name ?? "No building"}

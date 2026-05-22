@@ -277,7 +277,17 @@ export const appRouter = router({
       const allBuildings = await getAllBuildings();
       const buildingMap = new Map(allBuildings.map(b => [b.id, b]));
 
-      // Pull firstName/lastName from employment_application formData for each hire
+      const REQUIRED_FORM_TYPES = [
+        "employment_application",
+        "confidentiality_agreement",
+        "tracking_agreement",
+        "policies_acknowledgment",
+        "direct_deposit",
+        "w4",
+        "i9",
+      ];
+
+      // Pull firstName/lastName and form approval status from submissions
       const hiresWithNames = await Promise.all(hires.map(async (h) => {
         const subs = await getFormSubmissionsByNewHire(h.id);
         const appSub = subs.find(s => s.formType === "employment_application");
@@ -292,11 +302,43 @@ export const appRouter = router({
         if (!firstName && !lastName) {
           firstName = h.email.split("@")[0];
         }
+
+        // Compute form approval status
+        const submittedForms = subs.filter(s => s.status !== "draft");
+        const approvedForms = subs.filter(s => s.status === "hr_approved" || s.status === "brandon_approved");
+        const rejectedForms = subs.filter(s => s.status === "hr_rejected" || s.status === "brandon_rejected");
+        const requiredApproved = REQUIRED_FORM_TYPES.filter(ft =>
+          approvedForms.some(s => s.formType === ft)
+        );
+        const allFormsApproved = requiredApproved.length === REQUIRED_FORM_TYPES.length;
+        const hasRejected = rejectedForms.length > 0;
+        const totalSubmitted = submittedForms.length;
+        const totalApproved = approvedForms.length;
+
+        // formStatus: 'all_approved' | 'partially_approved' | 'pending' | 'rejected' | 'no_submissions'
+        let formStatus: "all_approved" | "partially_approved" | "pending" | "rejected" | "no_submissions";
+        if (totalSubmitted === 0) {
+          formStatus = "no_submissions";
+        } else if (allFormsApproved) {
+          formStatus = "all_approved";
+        } else if (hasRejected) {
+          formStatus = "rejected";
+        } else if (totalApproved > 0) {
+          formStatus = "partially_approved";
+        } else {
+          formStatus = "pending";
+        }
+
         return {
           ...h,
           firstName,
           lastName,
           building: h.buildingId ? buildingMap.get(h.buildingId) ?? null : null,
+          formStatus,
+          formsApprovedCount: totalApproved,
+          formsSubmittedCount: totalSubmitted,
+          formsRequiredApprovedCount: requiredApproved.length,
+          formsRequiredTotal: REQUIRED_FORM_TYPES.length,
         };
       }));
 

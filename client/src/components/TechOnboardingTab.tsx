@@ -1,260 +1,185 @@
 /**
- * TechOnboardingTab — Ethan Cowles's Technology Onboarding fillable form
- * Design: ApartmentCorp dark navy brand, teal accents
- * Purpose: Ethan fills in all credentials/logins for a new hire; data saves to localStorage
- *          and will eventually auto-populate the Company Websites & Logins tab per employee.
+ * TechOnboardingTab — Ethan Cowles's IT Provisioning Panel
+ *
+ * Flow:
+ *   1. Shows a card for every registered new hire (from DB via admin.listNewHires)
+ *   2. Ethan clicks a hire → sees a credential form for every platform
+ *   3. On Save, credentials are persisted to DB via admin.saveCredentials
+ *   4. New hire's Company Websites & Logins tab auto-shows those credentials
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  Monitor, User, Smartphone, Laptop, CreditCard,
-  Building2, ChevronDown, ChevronUp, Save, CheckCircle2,
-  Copy, Eye, EyeOff, Printer, Cpu, Wrench, Users, ClipboardList,
-  Phone, BarChart3, DollarSign, RefreshCw, AlertCircle
+  Monitor, User, ChevronLeft, Save, CheckCircle2,
+  Eye, EyeOff, Copy, Wrench, Users, Phone,
+  BarChart3, DollarSign, Laptop, Building2, Cpu,
+  AlertCircle, Loader2, Plus, Lock
 } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Platform definitions ─────────────────────────────────────────────────────
+// Each entry maps to a row in new_hire_credentials (platform = id)
 
-interface CredentialField {
-  key: string;
+interface PlatformDef {
+  id: string;          // matches ALL_PLATFORMS in schema
   label: string;
-  placeholder: string;
-  type: "text" | "email" | "password" | "tel" | "select";
-  options?: string[];
-  required?: boolean;
-  hint?: string;
-}
-
-interface TechSection {
-  id: string;
-  title: string;
-  subtitle: string;
   icon: React.ReactNode;
   color: string;
-  fields: CredentialField[];
+  url: string;
+  usernameLabel: string;
+  passwordLabel: string;
+  notesPlaceholder: string;
 }
 
-interface EmployeeRecord {
-  id: string;
-  name: string;
-  role: string;
-  startDate: string;
-  department: string;
-  createdAt: number;
-  completedAt?: number;
-  credentials: Record<string, string>;
-}
-
-// ─── Section Definitions ──────────────────────────────────────────────────────
-
-const TECH_SECTIONS: TechSection[] = [
-  // ── 1. Employee Info ────────────────────────────────────────────────────────
+const PLATFORMS: PlatformDef[] = [
   {
-    id: "employee_info",
-    title: "New Employee Information",
-    subtitle: "Basic details about the new hire",
-    icon: <User className="w-5 h-5" />,
-    color: "oklch(0.55 0.14 220)",
-    fields: [
-      { key: "full_name", label: "Full Name", placeholder: "Jane Smith", type: "text", required: true },
-      { key: "role_title", label: "Job Title / Role", placeholder: "Leasing Agent", type: "text", required: true },
-      { key: "department", label: "Department", placeholder: "Leasing", type: "select", options: ["Leasing", "Maintenance", "Property Management", "Accounting", "Marketing", "Executive", "Administrative"], required: true },
-      { key: "start_date", label: "Start Date", placeholder: "MM/DD/YYYY", type: "text", required: true },
-      { key: "office_location", label: "Office / Property Location", placeholder: "Main Office — Dallas, TX", type: "text" },
-      { key: "direct_supervisor", label: "Direct Supervisor", placeholder: "Manager Name", type: "text" },
-    ],
-  },
-  // ── 3. PropertyMAX.ai ───────────────────────────────────────────────────────
-  {
-    id: "propertymax",
-    title: "PropertyMAX.ai — Hub",
-    subtitle: "Main AI-powered property management platform (propertymax.ai/app/)",
-    icon: <Building2 className="w-5 h-5" />,
+    id: "PropertyMAX.ai",
+    label: "PropertyMAX.ai",
+    icon: <Building2 className="w-4 h-4" />,
     color: "oklch(0.62 0.16 165)",
-    fields: [
-      { key: "pmax_username", label: "PropertyMAX Username / Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
-      { key: "pmax_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true, hint: "Employee will be prompted to change on first login" },
-      { key: "pmax_role", label: "User Role", placeholder: "Leasing Agent", type: "select", options: ["Leasing Agent", "Maintenance Tech", "Property Manager", "Regional Manager", "Admin", "Read Only"] },
-      { key: "pmax_properties", label: "Properties / Buildings Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Comma-separated list of property names" },
-      { key: "pmax_building_override", label: "Default Building View", placeholder: "All Buildings", type: "text", hint: "Leave blank for All Buildings access" },
-      { key: "pmax_login_url", label: "Login URL", placeholder: "https://propertymax.ai/app/", type: "text" },
-    ],
+    url: "https://propertymax.ai/app/",
+    usernameLabel: "Username / Email",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Role, properties assigned, notes…",
   },
-  // ── 4. AppWork ──────────────────────────────────────────────────────────────
   {
-    id: "appwork",
-    title: "AppWork",
-    subtitle: "Maintenance work order & make-ready management (admin.appworkco.com)",
-    icon: <Wrench className="w-5 h-5" />,
+    id: "AppWorks",
+    label: "AppWorks",
+    icon: <Wrench className="w-4 h-4" />,
     color: "oklch(0.60 0.16 55)",
-    fields: [
-      { key: "appwork_email", label: "AppWork Login Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
-      { key: "appwork_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true },
-      { key: "appwork_role", label: "User Role", placeholder: "Technician", type: "select", options: ["Technician", "Lead Technician", "Property Manager", "Admin", "Read Only"], required: true, hint: "Technician role for maintenance staff; Admin for managers" },
-      { key: "appwork_properties", label: "Properties Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Users can only see work orders for assigned properties" },
-      { key: "appwork_mobile_app", label: "Mobile App Invited?", placeholder: "Yes — invite sent to email", type: "select", options: ["Yes — invite sent to email", "No — desktop only", "Pending"], hint: "Technicians use the AppWork Technician mobile app" },
-      { key: "appwork_login_url", label: "Admin Portal URL", placeholder: "https://admin.appworkco.com/", type: "text" },
-    ],
+    url: "https://admin.appworkco.com/",
+    usernameLabel: "Login Email",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Role, properties assigned…",
   },
-  // ── 5. Connecteam ───────────────────────────────────────────────────────────
   {
-    id: "connecteam",
-    title: "Connecteam",
-    subtitle: "Employee scheduling, time tracking & team communication (app.connecteam.com)",
-    icon: <Users className="w-5 h-5" />,
+    id: "Connecteam",
+    label: "Connecteam",
+    icon: <Users className="w-4 h-4" />,
     color: "oklch(0.62 0.18 280)",
-    fields: [
-      { key: "connecteam_invite_email", label: "Invite Email Sent To", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true, hint: "Connecteam sends an invite link to this email" },
-      { key: "connecteam_role", label: "User Role", placeholder: "Employee", type: "select", options: ["Employee", "Manager", "Admin", "Owner"], required: true },
-      { key: "connecteam_job_title", label: "Job Title in Connecteam", placeholder: "Leasing Agent", type: "text" },
-      { key: "connecteam_smart_groups", label: "Smart Groups / Teams Added To", placeholder: "Leasing Team, All Staff", type: "text", hint: "Comma-separated group names" },
-      { key: "connecteam_time_clock", label: "Time Clock Enabled?", placeholder: "Yes", type: "select", options: ["Yes", "No"] },
-      { key: "connecteam_scheduling", label: "Scheduling Access?", placeholder: "View Only", type: "select", options: ["View Own Schedule", "View & Edit Team", "No Access"] },
-      { key: "connecteam_login_url", label: "Login URL", placeholder: "https://app.connecteam.com/", type: "text" },
-    ],
+    url: "https://app.connecteam.com/",
+    usernameLabel: "Invite Email",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Role, smart groups…",
   },
-  // ── 6. Inspections ──────────────────────────────────────────────────────────
   {
-    id: "inspections",
-    title: "Inspections",
-    subtitle: "Property inspection & unit condition reporting platform",
-    icon: <ClipboardList className="w-5 h-5" />,
-    color: "oklch(0.60 0.15 160)",
-    fields: [
-      { key: "inspect_email", label: "Login Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
-      { key: "inspect_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password" },
-      { key: "inspect_role", label: "User Role", placeholder: "Inspector", type: "select", options: ["Inspector", "Property Manager", "Regional Manager", "Admin", "Read Only"], required: true, hint: "Property Manager role can complete inspections for assigned properties" },
-      { key: "inspect_properties", label: "Properties Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Users can only inspect their assigned properties" },
-      { key: "inspect_templates", label: "Inspection Templates Assigned", placeholder: "Move-In, Move-Out, Annual", type: "text", hint: "Comma-separated template names" },
-      { key: "inspect_mobile_app", label: "Mobile App Access?", placeholder: "Yes", type: "select", options: ["Yes — invite sent", "No — web only", "Pending"] },
-      { key: "inspect_login_url", label: "Login URL", placeholder: "https://app.propertyinspect.com/", type: "text" },
-    ],
-  },
-  // ── 7. OneSite (RealPage) ───────────────────────────────────────────────────
-  {
-    id: "onesite",
-    title: "OneSite (RealPage)",
-    subtitle: "RealPage OneSite leasing, rents & resident management platform",
-    icon: <BarChart3 className="w-5 h-5" />,
+    id: "OneSite",
+    label: "OneSite (RealPage)",
+    icon: <BarChart3 className="w-4 h-4" />,
     color: "oklch(0.58 0.16 240)",
-    fields: [
-      { key: "onesite_username", label: "OneSite Username", placeholder: "jsmith", type: "text", required: true },
-      { key: "onesite_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true, hint: "User must change password on first login" },
-      { key: "onesite_role", label: "User Role / Security Profile", placeholder: "Leasing Agent", type: "select", options: ["Leasing Agent", "Leasing Manager", "Property Manager", "Regional Manager", "Accounting", "Superuser", "Read Only"], required: true, hint: "Superuser role required to grant New OneSite Experience access" },
-      { key: "onesite_properties", label: "Properties / Sites Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Users only see data for assigned properties" },
-      { key: "onesite_modules", label: "Modules Enabled", placeholder: "Leasing & Rents, Facilities", type: "text", hint: "e.g. Leasing & Rents, Facilities, Accounting, Screening" },
-      { key: "onesite_new_experience", label: "New OneSite Experience Enabled?", placeholder: "Yes", type: "select", options: ["Yes — custom role created", "No — classic view", "Pending"] },
-      { key: "onesite_login_url", label: "Login URL", placeholder: "https://onesite.realpage.com/", type: "text" },
-    ],
+    url: "https://onesite.realpage.com/",
+    usernameLabel: "Username",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Role, properties, modules…",
   },
-  // ── 8. Paychex ──────────────────────────────────────────────────────────────
   {
-    id: "paychex",
-    title: "Paychex",
-    subtitle: "Payroll, HR & benefits administration platform (paychexflex.com)",
-    icon: <DollarSign className="w-5 h-5" />,
+    id: "Paychex",
+    label: "Paychex",
+    icon: <DollarSign className="w-4 h-4" />,
     color: "oklch(0.60 0.16 40)",
-    fields: [
-      { key: "paychex_employee_id", label: "Paychex Employee ID", placeholder: "EMP-00123", type: "text", required: true },
-      { key: "paychex_username", label: "Paychex Flex Username", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
-      { key: "paychex_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", hint: "Employee will be prompted to reset on first login at paychexflex.com" },
-      { key: "paychex_role", label: "User Role", placeholder: "Employee", type: "select", options: ["Employee", "Manager — View Team", "Manager — Approve Time", "HR Admin", "Payroll Admin", "Super Admin"] },
-      { key: "paychex_pay_frequency", label: "Pay Frequency", placeholder: "Bi-Weekly", type: "select", options: ["Weekly", "Bi-Weekly", "Semi-Monthly", "Monthly"] },
-      { key: "paychex_direct_deposit", label: "Direct Deposit Set Up?", placeholder: "Pending", type: "select", options: ["Yes — confirmed", "Pending — form submitted", "No — paper check"] },
-      { key: "paychex_benefits_enrolled", label: "Benefits Enrollment Status", placeholder: "Pending", type: "select", options: ["Enrolled", "Pending enrollment", "Waived", "Not eligible yet"] },
-      { key: "paychex_login_url", label: "Login URL", placeholder: "https://www.paychexflex.com/", type: "text" },
-    ],
+    url: "https://myapps.paychex.com",
+    usernameLabel: "Paychex Flex Username",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Employee ID, pay frequency, benefits status…",
   },
-  // ── 9. Phone Portal ─────────────────────────────────────────────────────────
   {
-    id: "phone_portal",
-    title: "Phone Portal",
-    subtitle: "Business VoIP phone system — call management, voicemail & extensions",
-    icon: <Phone className="w-5 h-5" />,
+    id: "Phone Portal",
+    label: "Phone Portal",
+    icon: <Phone className="w-4 h-4" />,
     color: "oklch(0.62 0.14 195)",
-    fields: [
-      { key: "phone_login_email", label: "Phone Portal Login Email", placeholder: "jsmith@apartmentcorp.com", type: "email", required: true },
-      { key: "phone_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password" },
-      { key: "phone_extension", label: "Direct Extension Number", placeholder: "Ext. 209", type: "text", required: true },
-      { key: "phone_did", label: "Direct Inward Dial (DID) Number", placeholder: "(555) 123-4567", type: "tel", hint: "The direct phone number assigned to this employee, if applicable" },
-      { key: "phone_role", label: "User Role", placeholder: "User", type: "select", options: ["User", "Manager", "Admin", "Super Admin"] },
-      { key: "phone_call_queues", label: "Call Queues / Ring Groups Assigned", placeholder: "Main Office, Leasing Line", type: "text", hint: "Comma-separated queue names" },
-      { key: "phone_voicemail_setup", label: "Voicemail Set Up?", placeholder: "Yes", type: "select", options: ["Yes — greeting recorded", "Yes — default greeting", "Pending", "No"] },
-      { key: "phone_mobile_app", label: "Mobile App Installed?", placeholder: "Yes", type: "select", options: ["Yes — installed & logged in", "Pending", "No — desk phone only"] },
-      { key: "phone_login_url", label: "Portal Login URL", placeholder: "https://app.ringcentral.com/", type: "text" },
-    ],
+    url: "https://app.ringcentral.com/",
+    usernameLabel: "Login Email",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Extension, DID number, call queues…",
   },
-  // ── 10. Yardi ───────────────────────────────────────────────────────────────
   {
-    id: "yardi",
-    title: "Yardi",
-    subtitle: "Yardi Voyager property management & accounting platform",
-    icon: <BarChart3 className="w-5 h-5" />,
+    id: "Yardi",
+    label: "Yardi Voyager",
+    icon: <BarChart3 className="w-4 h-4" />,
     color: "oklch(0.58 0.18 30)",
-    fields: [
-      { key: "yardi_username", label: "Yardi Username", placeholder: "jsmith", type: "text", required: true, hint: "Typically first initial + last name, e.g. jsmith" },
-      { key: "yardi_temp_password", label: "Temp Password", placeholder: "TempPass2024!", type: "password", required: true, hint: "Employee must change on first login" },
-      { key: "yardi_database", label: "Yardi Database / Environment", placeholder: "PROD", type: "select", options: ["PROD (Production)", "TEST (Training)", "STAGE (Staging)", "Both PROD & TEST"] },
-      { key: "yardi_security_role", label: "Security Role Assigned", placeholder: "Leasing Agent", type: "select", options: ["Leasing Agent", "Leasing Manager", "Property Manager", "Regional Manager", "Accounting Staff", "Accounting Manager", "Maintenance", "Executive", "Read Only", "Custom Role"] },
-      { key: "yardi_properties", label: "Properties / Property Groups Assigned", placeholder: "Parkview Apts, Oakwood Commons", type: "text", hint: "Yardi supports explicit property lists or property group assignments" },
-      { key: "yardi_modules", label: "Modules / Menu Access Granted", placeholder: "Leasing, Residents, Reports", type: "text", hint: "e.g. Leasing, Residents, Maintenance, Accounting, Reports" },
-      { key: "yardi_login_url", label: "Yardi Login URL", placeholder: "https://www.yardiasp.com/", type: "text", hint: "Client-specific URL — confirm with IT" },
-    ],
+    url: "https://www.yardiasp.com/",
+    usernameLabel: "Username",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Database, security role, properties…",
   },
-  // ── 11. IT Equipment & Access ────────────────────────────────────────────────
   {
-    id: "it_equipment",
-    title: "IT Equipment & Physical Access",
-    subtitle: "Hardware assigned, badge access, VPN, and MFA enrollment",
-    icon: <Laptop className="w-5 h-5" />,
+    id: "MyLoneWorkers.com",
+    label: "MyLoneWorkers",
+    icon: <Wrench className="w-4 h-4" />,
+    color: "oklch(0.60 0.15 160)",
+    url: "https://app.myloneworkers.com",
+    usernameLabel: "Login Email",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Supervisor, shift check-in notes…",
+  },
+  {
+    id: "ConnectUC",
+    label: "ConnectUC",
+    icon: <Phone className="w-4 h-4" />,
+    color: "oklch(0.62 0.14 220)",
+    url: "https://app.connectuc.com",
+    usernameLabel: "Login Email",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Extension, team groups…",
+  },
+  {
+    id: "SamePage",
+    label: "SamePage",
+    icon: <Users className="w-4 h-4" />,
+    color: "oklch(0.60 0.14 300)",
+    url: "https://samepage.io/login",
+    usernameLabel: "Login Email",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Workspace, team access…",
+  },
+  {
+    id: "VMware Horizon",
+    label: "VMware Horizon",
+    icon: <Laptop className="w-4 h-4" />,
     color: "oklch(0.55 0.12 130)",
-    fields: [
-      { key: "laptop_serial", label: "Laptop Serial Number", placeholder: "C02XK1JDJGH7", type: "text" },
-      { key: "laptop_model", label: "Laptop Model", placeholder: "MacBook Pro 14\" / Dell Latitude 5540", type: "text" },
-      { key: "phone_number", label: "Company Phone Number (if issued)", placeholder: "(555) 000-0000", type: "tel" },
-      { key: "phone_model", label: "Phone Model (if issued)", placeholder: "iPhone 15 / Samsung S24", type: "text" },
-      { key: "badge_number", label: "Access Badge Number", placeholder: "BADGE-0042", type: "text" },
-      { key: "badge_access_level", label: "Badge Access Level", placeholder: "Standard", type: "select", options: ["Standard", "Manager", "Executive", "IT/Maintenance", "Full Access"] },
-      { key: "vpn_account", label: "VPN Account / Username", placeholder: "jsmith", type: "text" },
-      { key: "mfa_method", label: "MFA Method Enrolled", placeholder: "Authenticator App", type: "select", options: ["Authenticator App", "SMS", "Email", "Hardware Key", "Not Yet Set Up"] },
-    ],
+    url: "https://horizon.apartmentcorp.com",
+    usernameLabel: "Username",
+    passwordLabel: "Temp Password",
+    notesPlaceholder: "Workstation serial #, connection server…",
   },
-  // ── 12. Additional Notes ─────────────────────────────────────────────────────
   {
-    id: "additional_systems",
-    title: "Additional Systems & Notes",
-    subtitle: "Any other platforms, logins, or special instructions for this employee",
-    icon: <Cpu className="w-5 h-5" />,
+    id: "Additional Systems",
+    label: "Additional Systems / Notes",
+    icon: <Cpu className="w-4 h-4" />,
     color: "oklch(0.58 0.14 260)",
-    fields: [
-      { key: "other_system_1", label: "Other System 1 — Name & Login", placeholder: "System Name: username / password", type: "text" },
-      { key: "other_system_2", label: "Other System 2 — Name & Login", placeholder: "System Name: username / password", type: "text" },
-      { key: "other_system_3", label: "Other System 3 — Name & Login", placeholder: "System Name: username / password", type: "text" },
-      { key: "special_instructions", label: "Special Instructions / Notes for New Hire", placeholder: "Any additional setup steps, access notes, or reminders...", type: "text" },
-      { key: "it_ticket_number", label: "IT Ticket / Reference Number", placeholder: "INC-20240001", type: "text" },
-      { key: "completed_by", label: "Completed By (Ethan's confirmation)", placeholder: "Ethan Cowles", type: "text" },
-    ],
+    url: "",
+    usernameLabel: "System Name & Username",
+    passwordLabel: "Password / Access Code",
+    notesPlaceholder: "Any other platforms, special instructions, IT ticket #…",
   },
 ];
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "ac_tech_onboarding_v1";
-
-function loadRecords(): EmployeeRecord[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
+function statusColor(status: string) {
+  switch (status) {
+    case "all_approved": return "oklch(0.55 0.18 160)";
+    case "partially_approved": return "oklch(0.60 0.18 55)";
+    case "rejected": return "oklch(0.55 0.22 25)";
+    case "pending": return "oklch(0.58 0.14 260)";
+    default: return "oklch(0.45 0.08 258)";
   }
 }
 
-function saveRecords(records: EmployeeRecord[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+function statusLabel(status: string) {
+  switch (status) {
+    case "all_approved": return "✅ All Forms Approved";
+    case "partially_approved": return "⏳ Partially Approved";
+    case "rejected": return "❌ Has Rejections";
+    case "pending": return "🕐 Pending Review";
+    default: return "📋 No Submissions";
+  }
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Password field ───────────────────────────────────────────────────────────
 
 function PasswordField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
   const [show, setShow] = useState(false);
@@ -273,27 +198,121 @@ function PasswordField({ value, onChange, placeholder }: { value: string; onChan
         }}
       />
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-        <button
-          type="button"
-          onClick={() => setShow(!show)}
+        <button type="button" onClick={() => setShow(!show)}
           className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-          style={{ color: "oklch(0.72 0.12 220)" }}
-          title={show ? "Hide" : "Show"}
-        >
+          style={{ color: "oklch(0.72 0.12 220)" }} title={show ? "Hide" : "Show"}>
           {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(value);
-            toast.success("Copied to clipboard");
-          }}
+        <button type="button" onClick={() => { navigator.clipboard.writeText(value); toast.success("Copied"); }}
           className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-          style={{ color: "oklch(0.72 0.12 220)" }}
-          title="Copy"
-        >
+          style={{ color: "oklch(0.72 0.12 220)" }} title="Copy">
           <Copy className="w-3.5 h-3.5" />
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Platform credential row ──────────────────────────────────────────────────
+
+function PlatformRow({
+  platform,
+  username,
+  password,
+  notes,
+  required,
+  onChange,
+}: {
+  platform: PlatformDef;
+  username: string;
+  password: string;
+  notes: string;
+  required: boolean;
+  onChange: (field: "username" | "password" | "notes" | "required", val: string | boolean) => void;
+}) {
+  const hasData = username.trim() || password.trim();
+
+  return (
+    <div
+      className="rounded-xl border p-4 transition-all"
+      style={{
+        backgroundColor: hasData ? "oklch(0.20 0.06 258)" : "oklch(0.17 0.04 258)",
+        borderColor: hasData ? platform.color : "oklch(0.28 0.06 258)",
+        borderLeftWidth: "3px",
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span style={{ color: platform.color }}>{platform.icon}</span>
+          <span className="font-semibold text-sm" style={{ color: "oklch(0.92 0.01 220)" }}>
+            {platform.label}
+          </span>
+          {platform.url && (
+            <a href={platform.url} target="_blank" rel="noopener noreferrer"
+              className="text-xs opacity-50 hover:opacity-80 transition-opacity"
+              style={{ color: "oklch(0.72 0.12 220)" }}>
+              ↗
+            </a>
+          )}
+        </div>
+        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={required}
+            onChange={(e) => onChange("required", e.target.checked)}
+            className="w-3.5 h-3.5 accent-teal-400"
+          />
+          <span className="text-xs" style={{ color: "oklch(0.65 0.08 220)" }}>Required for this hire</span>
+        </label>
+      </div>
+
+      {/* Fields */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs mb-1" style={{ color: "oklch(0.65 0.08 220)" }}>
+            {platform.usernameLabel}
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => onChange("username", e.target.value)}
+            placeholder={`e.g. jsmith@apartmentcorp.com`}
+            className="w-full px-3 py-2 rounded-md text-sm border transition-all focus:outline-none"
+            style={{
+              backgroundColor: "oklch(0.18 0.05 258)",
+              borderColor: "oklch(0.30 0.07 258)",
+              color: "oklch(0.92 0.01 220)",
+            }}
+          />
+        </div>
+        <div>
+          <label className="block text-xs mb-1" style={{ color: "oklch(0.65 0.08 220)" }}>
+            {platform.passwordLabel}
+          </label>
+          <PasswordField
+            value={password}
+            onChange={(v) => onChange("password", v)}
+            placeholder="Temp password…"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-xs mb-1" style={{ color: "oklch(0.65 0.08 220)" }}>
+            Notes / Role / Access Level
+          </label>
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => onChange("notes", e.target.value)}
+            placeholder={platform.notesPlaceholder}
+            className="w-full px-3 py-2 rounded-md text-sm border transition-all focus:outline-none"
+            style={{
+              backgroundColor: "oklch(0.18 0.05 258)",
+              borderColor: "oklch(0.30 0.07 258)",
+              color: "oklch(0.92 0.01 220)",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -302,433 +321,271 @@ function PasswordField({ value, onChange, placeholder }: { value: string; onChan
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function TechOnboardingTab() {
-  const [records, setRecords] = useState<EmployeeRecord[]>(loadRecords);
-  const [activeRecordId, setActiveRecordId] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["employee_info"]));
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [formData, setFormData] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(false);
+  const [selectedHireId, setSelectedHireId] = useState<number | null>(null);
 
-  // Derive active record
-  const activeRecord = records.find((r) => r.id === activeRecordId) || null;
+  // Credential state: Record<platform_id, { username, password, notes, required }>
+  const [creds, setCreds] = useState<Record<string, { username: string; password: string; notes: string; required: boolean }>>({});
+  const [dirty, setDirty] = useState(false);
 
-  // Load record into form when switching
-  useEffect(() => {
-    if (activeRecord) {
-      setFormData(activeRecord.credentials);
-      setShowNewForm(false);
+  const utils = trpc.useUtils();
+
+  // Fetch all new hires
+  const { data: hires, isLoading: loadingHires } = trpc.admin.listNewHires.useQuery();
+
+  // Fetch existing credentials for selected hire
+  const { data: existingCreds, isLoading: loadingCreds } = trpc.admin.getCredentials.useQuery(
+    { newHireId: selectedHireId! },
+    {
+      enabled: selectedHireId !== null,
+      onSuccess: (data) => {
+        // Pre-populate form with saved credentials
+        const map: Record<string, { username: string; password: string; notes: string; required: boolean }> = {};
+        for (const c of data) {
+          map[c.platform] = {
+            username: c.username ?? "",
+            password: c.password ?? "",
+            notes: c.notes ?? "",
+            required: c.required,
+          };
+        }
+        setCreds(map);
+        setDirty(false);
+      },
     }
-  }, [activeRecordId]);
+  );
 
-  const handleField = (key: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
+  // Save credentials mutation
+  const saveMutation = trpc.admin.saveCredentials.useMutation({
+    onSuccess: () => {
+      toast.success("✅ Credentials saved — new hire's portal updated!");
+      setDirty(false);
+      utils.admin.getCredentials.invalidate({ newHireId: selectedHireId! });
+    },
+    onError: () => toast.error("Failed to save credentials. Please try again."),
+  });
+
+  const selectedHire = hires?.find((h) => h.id === selectedHireId);
+
+  const handleCredChange = (
+    platformId: string,
+    field: "username" | "password" | "notes" | "required",
+    val: string | boolean
+  ) => {
+    setCreds((prev) => ({
+      ...prev,
+      [platformId]: {
+        username: prev[platformId]?.username ?? "",
+        password: prev[platformId]?.password ?? "",
+        notes: prev[platformId]?.notes ?? "",
+        required: prev[platformId]?.required ?? false,
+        [field]: val,
+      },
+    }));
+    setDirty(true);
   };
 
   const handleSave = () => {
-    if (activeRecordId) {
-      // Update existing
-      const updated = records.map((r) =>
-        r.id === activeRecordId
-          ? { ...r, credentials: formData, name: formData.full_name || r.name, role: formData.role_title || r.role, startDate: formData.start_date || r.startDate, department: formData.department || r.department }
-          : r
-      );
-      setRecords(updated);
-      saveRecords(updated);
-    } else {
-      // Create new
-      const newRecord: EmployeeRecord = {
-        id: "emp_" + Math.random().toString(36).slice(2),
-        name: formData.full_name || "New Employee",
-        role: formData.role_title || "",
-        startDate: formData.start_date || "",
-        department: formData.department || "",
-        createdAt: Date.now(),
-        credentials: formData,
-      };
-      const updated = [newRecord, ...records];
-      setRecords(updated);
-      saveRecords(updated);
-      setActiveRecordId(newRecord.id);
-      setShowNewForm(false);
-    }
-    setSaved(true);
-    toast.success("Technology onboarding record saved!");
-    setTimeout(() => setSaved(false), 3000);
+    if (!selectedHireId) return;
+    const credentials = PLATFORMS.map((p) => ({
+      platform: p.id,
+      required: creds[p.id]?.required ?? false,
+      username: creds[p.id]?.username || null,
+      password: creds[p.id]?.password || null,
+      notes: creds[p.id]?.notes || null,
+    }));
+    saveMutation.mutate({ newHireId: selectedHireId, credentials });
   };
 
-  const handleMarkComplete = () => {
-    if (!activeRecordId) return;
-    const updated = records.map((r) =>
-      r.id === activeRecordId ? { ...r, completedAt: Date.now(), credentials: formData } : r
+  const filledCount = PLATFORMS.filter((p) => creds[p.id]?.username?.trim()).length;
+  const requiredCount = PLATFORMS.filter((p) => creds[p.id]?.required).length;
+
+  // ── Hire list view ──────────────────────────────────────────────────────────
+  if (!selectedHireId) {
+    return (
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg"
+            style={{ backgroundColor: "oklch(0.22 0.08 258)" }}>
+            <Monitor className="w-5 h-5" style={{ color: "oklch(0.72 0.12 220)" }} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold" style={{ color: "oklch(0.92 0.01 220)" }}>
+              IT Credential Provisioning
+            </h2>
+            <p className="text-sm" style={{ color: "oklch(0.65 0.08 220)" }}>
+              Ethan Cowles — Select a new hire to enter their platform credentials
+            </p>
+          </div>
+        </div>
+
+        {/* New hire cards */}
+        {loadingHires ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: "oklch(0.72 0.12 220)" }} />
+            <span className="ml-2 text-sm" style={{ color: "oklch(0.65 0.08 220)" }}>Loading new hires…</span>
+          </div>
+        ) : !hires || hires.length === 0 ? (
+          <div className="text-center py-16 rounded-xl border"
+            style={{ borderColor: "oklch(0.28 0.06 258)", backgroundColor: "oklch(0.17 0.04 258)" }}>
+            <Users className="w-10 h-10 mx-auto mb-3 opacity-40" style={{ color: "oklch(0.72 0.12 220)" }} />
+            <p className="text-sm" style={{ color: "oklch(0.65 0.08 220)" }}>No new hires registered yet.</p>
+            <p className="text-xs mt-1 opacity-60" style={{ color: "oklch(0.65 0.08 220)" }}>
+              New hires will appear here once they register on the onboarding portal.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {hires.map((hire) => {
+              const name = [hire.firstName, hire.lastName].filter(Boolean).join(" ") || hire.email;
+              return (
+                <button
+                  key={hire.id}
+                  onClick={() => { setSelectedHireId(hire.id); setCreds({}); setDirty(false); }}
+                  className="text-left rounded-xl border p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    backgroundColor: "oklch(0.18 0.05 258)",
+                    borderColor: "oklch(0.30 0.07 258)",
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold"
+                      style={{ backgroundColor: "oklch(0.25 0.08 258)", color: "oklch(0.72 0.12 220)" }}>
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      style={{
+                        backgroundColor: statusColor(hire.formStatus) + "33",
+                        color: statusColor(hire.formStatus),
+                        border: `1px solid ${statusColor(hire.formStatus)}55`,
+                      }}
+                    >
+                      {statusLabel(hire.formStatus)}
+                    </span>
+                  </div>
+                  <div className="font-semibold text-sm mb-0.5" style={{ color: "oklch(0.92 0.01 220)" }}>
+                    {name}
+                  </div>
+                  <div className="text-xs opacity-60 mb-2" style={{ color: "oklch(0.72 0.12 220)" }}>
+                    {hire.email}
+                  </div>
+                  {hire.building && (
+                    <div className="text-xs opacity-70" style={{ color: "oklch(0.65 0.08 220)" }}>
+                      📍 {hire.building.name}
+                    </div>
+                  )}
+                  <div className="mt-3 pt-3 border-t flex items-center justify-between"
+                    style={{ borderColor: "oklch(0.28 0.06 258)" }}>
+                    <span className="text-xs" style={{ color: "oklch(0.65 0.08 220)" }}>
+                      {hire.formsApprovedCount}/{hire.formsSubmittedCount} forms approved
+                    </span>
+                    <span className="text-xs font-medium" style={{ color: "oklch(0.72 0.12 220)" }}>
+                      Enter Credentials →
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     );
-    setRecords(updated);
-    saveRecords(updated);
-    toast.success("Marked as complete! New hire credentials are ready.");
-  };
+  }
 
-  const handleNewEmployee = () => {
-    setActiveRecordId(null);
-    setFormData({});
-    setShowNewForm(true);
-    setExpandedSections(new Set(["employee_info"]));
-    setSaved(false);
-  };
-
-  const handleDeleteRecord = (id: string) => {
-    const updated = records.filter((r) => r.id !== id);
-    setRecords(updated);
-    saveRecords(updated);
-    if (activeRecordId === id) {
-      setActiveRecordId(null);
-      setFormData({});
-      setShowNewForm(false);
-    }
-    toast.success("Record deleted");
-  };
-
-  const toggleSection = (id: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const completionCount = TECH_SECTIONS.reduce((acc, sec) => {
-    return acc + sec.fields.filter((f) => formData[f.key]?.trim()).length;
-  }, 0);
-  const totalFields = TECH_SECTIONS.reduce((acc, sec) => acc + sec.fields.length, 0);
-  const completionPct = Math.round((completionCount / totalFields) * 100);
-
-  const isEditing = showNewForm || activeRecordId !== null;
+  // ── Credential entry view ───────────────────────────────────────────────────
+  const hireName = [selectedHire?.firstName, selectedHire?.lastName].filter(Boolean).join(" ") || selectedHire?.email || "";
 
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div
-              className="flex items-center justify-center w-10 h-10 rounded-lg"
-              style={{ backgroundColor: "oklch(0.22 0.08 258)" }}
-            >
-              <Monitor className="w-5 h-5" style={{ color: "oklch(0.72 0.12 220)" }} />
-            </div>
-            <div>
-              <h2
-                className="text-xl font-bold"
-                style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", color: "oklch(0.92 0.01 220)" }}
-              >
-                Technology Onboarding
-              </h2>
-              <p className="text-xs flex items-center gap-1.5" style={{ color: "oklch(0.60 0.05 258)" }}>
-                <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                  style={{ backgroundColor: "oklch(0.22 0.08 258)", color: "oklch(0.72 0.12 220)" }}
-                >
-                  <User className="w-3 h-3" />
-                  Ethan Cowles
-                </span>
-                <span>· IT Credential Provisioning Form</span>
-              </p>
-            </div>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSelectedHireId(null)}
+            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-all hover:bg-white/5"
+            style={{ borderColor: "oklch(0.30 0.07 258)", color: "oklch(0.72 0.12 220)" }}
+          >
+            <ChevronLeft className="w-4 h-4" /> All Hires
+          </button>
+          <div>
+            <h2 className="text-xl font-bold" style={{ color: "oklch(0.92 0.01 220)" }}>
+              {hireName}
+            </h2>
+            <p className="text-sm" style={{ color: "oklch(0.65 0.08 220)" }}>
+              {filledCount} of {PLATFORMS.length} platforms filled · {requiredCount} marked required
+            </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleNewEmployee}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-            style={{ backgroundColor: "oklch(0.72 0.12 220)", color: "oklch(0.12 0.05 258)" }}
-          >
-            <RefreshCw className="w-4 h-4" />
-            New Employee
-          </button>
-        </div>
+        <Button
+          onClick={handleSave}
+          disabled={saveMutation.isPending || !dirty}
+          className="flex items-center gap-2"
+          style={{
+            backgroundColor: dirty ? "oklch(0.55 0.18 160)" : "oklch(0.30 0.07 258)",
+            color: "oklch(0.97 0.01 220)",
+          }}
+        >
+          {saveMutation.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : dirty ? (
+            <Save className="w-4 h-4" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4" />
+          )}
+          {saveMutation.isPending ? "Saving…" : dirty ? "Save Credentials" : "Saved"}
+        </Button>
       </div>
 
-      <div className="flex gap-5 items-start">
-        {/* Left: Employee List */}
-        <aside className="hidden lg:flex flex-col gap-2 w-56 flex-shrink-0">
-          <div
-            className="text-xs font-semibold uppercase tracking-widest mb-1 px-1"
-            style={{ color: "oklch(0.55 0.05 258)" }}
-          >
-            Employees ({records.length})
-          </div>
+      {/* Info banner */}
+      <div className="flex items-start gap-3 p-3 rounded-lg mb-6"
+        style={{ backgroundColor: "oklch(0.22 0.08 220)", border: "1px solid oklch(0.35 0.10 220)" }}>
+        <Lock className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "oklch(0.72 0.12 220)" }} />
+        <p className="text-xs" style={{ color: "oklch(0.80 0.06 220)" }}>
+          Credentials entered here are encrypted in the database and will automatically appear in{" "}
+          <strong>{hireName}'s</strong> Company Websites &amp; Logins tab once saved.
+          Check <em>"Required for this hire"</em> for each platform they need access to.
+        </p>
+      </div>
 
-          {records.length === 0 && (
-            <div
-              className="text-xs text-center py-6 rounded-lg border border-dashed"
-              style={{ borderColor: "oklch(0.28 0.06 258)", color: "oklch(0.50 0.05 258)" }}
-            >
-              No records yet.<br />Click "New Employee" to start.
-            </div>
-          )}
+      {/* Loading state */}
+      {loadingCreds ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "oklch(0.72 0.12 220)" }} />
+          <span className="ml-2 text-sm" style={{ color: "oklch(0.65 0.08 220)" }}>Loading saved credentials…</span>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {PLATFORMS.map((platform) => (
+            <PlatformRow
+              key={platform.id}
+              platform={platform}
+              username={creds[platform.id]?.username ?? ""}
+              password={creds[platform.id]?.password ?? ""}
+              notes={creds[platform.id]?.notes ?? ""}
+              required={creds[platform.id]?.required ?? false}
+              onChange={(field, val) => handleCredChange(platform.id, field, val)}
+            />
+          ))}
 
-          {records.map((rec) => (
-            <button
-              key={rec.id}
-              onClick={() => setActiveRecordId(rec.id)}
-              className="w-full text-left px-3 py-2.5 rounded-lg border transition-all group"
+          {/* Bottom save */}
+          <div className="flex justify-end pt-2 pb-6">
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending || !dirty}
+              size="lg"
+              className="flex items-center gap-2"
               style={{
-                backgroundColor: activeRecordId === rec.id ? "oklch(0.22 0.08 258)" : "oklch(0.16 0.05 258)",
-                borderColor: activeRecordId === rec.id ? "oklch(0.72 0.12 220)" : "oklch(0.25 0.06 258)",
+                backgroundColor: dirty ? "oklch(0.55 0.18 160)" : "oklch(0.30 0.07 258)",
+                color: "oklch(0.97 0.01 220)",
               }}
             >
-              <div className="flex items-center justify-between gap-1">
-                <span
-                  className="text-sm font-semibold truncate"
-                  style={{ color: activeRecordId === rec.id ? "oklch(0.92 0.01 220)" : "oklch(0.75 0.04 258)" }}
-                >
-                  {rec.name || "Unnamed"}
-                </span>
-                {rec.completedAt && (
-                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "oklch(0.72 0.16 165)" }} />
-                )}
-              </div>
-              <div className="text-xs mt-0.5 truncate" style={{ color: "oklch(0.50 0.05 258)" }}>
-                {rec.role || "No role set"}
-              </div>
-              {rec.startDate && (
-                <div className="text-xs mt-0.5" style={{ color: "oklch(0.45 0.05 258)" }}>
-                  Start: {rec.startDate}
-                </div>
-              )}
-            </button>
-          ))}
-        </aside>
-
-        {/* Right: Form */}
-        <main className="flex-1 min-w-0">
-          {!isEditing ? (
-            <div
-              className="flex flex-col items-center justify-center py-20 rounded-xl border border-dashed text-center"
-              style={{ borderColor: "oklch(0.28 0.06 258)", backgroundColor: "oklch(0.14 0.04 258)" }}
-            >
-              <Monitor className="w-12 h-12 mb-4" style={{ color: "oklch(0.35 0.07 258)" }} />
-              <p className="text-base font-semibold mb-2" style={{ color: "oklch(0.65 0.05 258)" }}>
-                Select an employee or start a new record
-              </p>
-              <p className="text-sm mb-5" style={{ color: "oklch(0.45 0.04 258)" }}>
-                Fill in all technology credentials for each new hire
-              </p>
-              <button
-                onClick={handleNewEmployee}
-                className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                style={{ backgroundColor: "oklch(0.72 0.12 220)", color: "oklch(0.12 0.05 258)" }}
-              >
-                + Start New Employee Record
-              </button>
-            </div>
-          ) : (
-            <div>
-              {/* Progress Bar */}
-              <div
-                className="rounded-xl p-4 mb-5 border"
-                style={{ backgroundColor: "oklch(0.16 0.05 258)", borderColor: "oklch(0.25 0.06 258)" }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold" style={{ color: "oklch(0.85 0.03 220)" }}>
-                    Form Completion
-                  </span>
-                  <span className="text-sm font-bold" style={{ color: "oklch(0.72 0.12 220)" }}>
-                    {completionPct}% ({completionCount}/{totalFields} fields)
-                  </span>
-                </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "oklch(0.22 0.06 258)" }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${completionPct}%`, backgroundColor: "oklch(0.72 0.12 220)" }}
-                  />
-                </div>
-                {completionPct < 100 && (
-                  <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: "oklch(0.55 0.05 258)" }}>
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    Fill in all fields before marking complete and sharing with the new hire
-                  </p>
-                )}
-              </div>
-
-              {/* Sections */}
-              {TECH_SECTIONS.map((section) => {
-                const isOpen = expandedSections.has(section.id);
-                const filledInSection = section.fields.filter((f) => formData[f.key]?.trim()).length;
-                return (
-                  <div
-                    key={section.id}
-                    className="rounded-xl border mb-3 overflow-hidden"
-                    style={{ backgroundColor: "oklch(0.16 0.05 258)", borderColor: "oklch(0.25 0.06 258)" }}
-                  >
-                    {/* Section Header */}
-                    <button
-                      onClick={() => toggleSection(section.id)}
-                      className="w-full flex items-center justify-between px-5 py-4 text-left transition-all hover:opacity-90"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
-                          style={{ backgroundColor: `${section.color}22`, color: section.color }}
-                        >
-                          {section.icon}
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold" style={{ color: "oklch(0.90 0.02 220)" }}>
-                            {section.title}
-                          </div>
-                          <div className="text-xs" style={{ color: "oklch(0.55 0.05 258)" }}>
-                            {section.subtitle}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="text-xs font-medium px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: filledInSection === section.fields.length ? "oklch(0.62 0.16 165 / 0.2)" : "oklch(0.22 0.06 258)",
-                            color: filledInSection === section.fields.length ? "oklch(0.72 0.16 165)" : "oklch(0.55 0.05 258)",
-                          }}
-                        >
-                          {filledInSection}/{section.fields.length}
-                        </span>
-                        {isOpen ? (
-                          <ChevronUp className="w-4 h-4" style={{ color: "oklch(0.55 0.05 258)" }} />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" style={{ color: "oklch(0.55 0.05 258)" }} />
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Section Fields */}
-                    {isOpen && (
-                      <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t" style={{ borderColor: "oklch(0.22 0.06 258)" }}>
-                        {section.fields.map((field) => (
-                          <div key={field.key} className={field.key === "special_instructions" ? "sm:col-span-2" : ""}>
-                            <label
-                              className="block text-xs font-semibold mb-1.5"
-                              style={{ color: "oklch(0.70 0.05 258)" }}
-                            >
-                              {field.label}
-                              {field.required && (
-                                <span className="ml-1" style={{ color: "oklch(0.72 0.12 220)" }}>*</span>
-                              )}
-                            </label>
-
-                            {field.type === "password" ? (
-                              <PasswordField
-                                value={formData[field.key] || ""}
-                                onChange={(v) => handleField(field.key, v)}
-                                placeholder={field.placeholder}
-                              />
-                            ) : field.type === "select" ? (
-                              <select
-                                value={formData[field.key] || ""}
-                                onChange={(e) => handleField(field.key, e.target.value)}
-                                className="w-full px-3 py-2 rounded-md text-sm border transition-all focus:outline-none"
-                                style={{
-                                  backgroundColor: "oklch(0.18 0.05 258)",
-                                  borderColor: "oklch(0.30 0.07 258)",
-                                  color: formData[field.key] ? "oklch(0.92 0.01 220)" : "oklch(0.50 0.05 258)",
-                                }}
-                              >
-                                <option value="">Select...</option>
-                                {field.options?.map((opt) => (
-                                  <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type={field.type}
-                                value={formData[field.key] || ""}
-                                onChange={(e) => handleField(field.key, e.target.value)}
-                                placeholder={field.placeholder}
-                                className="w-full px-3 py-2 rounded-md text-sm border transition-all focus:outline-none"
-                                style={{
-                                  backgroundColor: "oklch(0.18 0.05 258)",
-                                  borderColor: "oklch(0.30 0.07 258)",
-                                  color: "oklch(0.92 0.01 220)",
-                                }}
-                              />
-                            )}
-
-                            {field.hint && (
-                              <p className="text-xs mt-1" style={{ color: "oklch(0.50 0.05 258)" }}>
-                                {field.hint}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Action Buttons */}
-              <div
-                className="flex flex-col sm:flex-row gap-3 mt-6 pt-5 border-t"
-                style={{ borderColor: "oklch(0.22 0.06 258)" }}
-              >
-                <button
-                  onClick={handleSave}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex-1"
-                  style={{
-                    backgroundColor: saved ? "oklch(0.62 0.16 165)" : "oklch(0.72 0.12 220)",
-                    color: "oklch(0.12 0.05 258)",
-                  }}
-                >
-                  {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                  {saved ? "Saved!" : "Save Record"}
-                </button>
-
-                <button
-                  onClick={handleMarkComplete}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold border transition-all flex-1"
-                  style={{
-                    backgroundColor: "oklch(0.62 0.16 165 / 0.15)",
-                    borderColor: "oklch(0.62 0.16 165)",
-                    color: "oklch(0.72 0.16 165)",
-                  }}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Mark Complete & Ready for New Hire
-                </button>
-
-                <button
-                  onClick={() => {
-                    window.print();
-                  }}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold border transition-all"
-                  style={{
-                    backgroundColor: "transparent",
-                    borderColor: "oklch(0.30 0.07 258)",
-                    color: "oklch(0.60 0.05 258)",
-                  }}
-                >
-                  <Printer className="w-4 h-4" />
-                  Print
-                </button>
-
-                {activeRecordId && (
-                  <button
-                    onClick={() => handleDeleteRecord(activeRecordId)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold border transition-all"
-                    style={{
-                      backgroundColor: "transparent",
-                      borderColor: "oklch(0.577 0.245 27.325 / 0.4)",
-                      color: "oklch(0.65 0.20 27)",
-                    }}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
+              {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saveMutation.isPending ? "Saving…" : dirty ? "Save All Credentials" : "All Saved ✓"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

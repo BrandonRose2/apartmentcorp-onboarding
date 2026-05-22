@@ -155,7 +155,7 @@ const BRANDON_EMAIL = "brandon@apartmentcorp.com";
 // Operations
 // const MARC_EMAIL = "mam@apartmentcorp.com";
 // const NICOLE_EMAIL = "nicole@apartmentcorp.com";
-// const ETHAN_EMAIL = "ethan@apartmentcorp.com";
+const ETHAN_EMAIL = "ethan@apartmentcorp.com";
 // const ROBERT_EMAIL = "robert@apartmentcorp.com";
 // Accounting / Payroll
 // const HELEN_EMAIL = "helenita@apartmentcorp.com"; // Payroll & AP
@@ -350,7 +350,6 @@ export async function validateResendApiKey(): Promise<boolean> {
 // Sent to Ethan (CC Brandon) when a new hire logs in for the first time.
 // TESTING_MODE = true: only sends to Brandon.
 const TESTING_MODE_FIRST_LOGIN = true;
-const ETHAN_EMAIL = "ethan@apartmentcorp.com"; // also used by provisioning email below
 
 export async function sendFirstLoginNotification({
   newHireName,

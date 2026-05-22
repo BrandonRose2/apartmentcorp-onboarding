@@ -69,14 +69,7 @@ const RESOURCE_CATEGORIES: ResourceCategory[] = [
         icon: "📇",
         tag: "Notion",
       },
-      {
-        id: "granite-park",
-        title: "Granite Park Capital",
-        description: "ApartmentCorp's investment and capital arm — learn about our fund strategy.",
-        url: "https://apartmentcorp.com",
-        icon: "📈",
-        tag: "Investment",
-      },
+
     ],
   },
   {
