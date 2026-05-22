@@ -66,3 +66,7 @@
 - [x] Admin review panel: remove approver role selector, default to Brandon as sole approver
 - [x] Submit notification: only notify Brandon, remove regional manager mention
 - [x] New hire portal: on load fetch approved submissions from server to restore correct chapter unlock state
+- [x] Fix PropertyMAX Training: migrate DB to section-level signature model (drop old columns, add section/itemLabel)
+- [x] Update training router: one signature per section (not per item)
+- [x] Update training UI: check all items in section, then sign once to complete entire section
+- [x] Add Phone Excellence Training as section 1, renumber all sections 1-10

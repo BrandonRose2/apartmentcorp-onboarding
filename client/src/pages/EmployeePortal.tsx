@@ -1371,24 +1371,34 @@ const TRAINING_SECTIONS = [
 
 function PropertyMaxTrainingPage({ onBack }: { onBack: () => void }) {
   const { data: progress = [], isLoading, refetch } = trpc.training.getMyProgress.useQuery();
-  const markComplete = trpc.training.markComplete.useMutation({ onSuccess: () => refetch() });
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ dashboard: true });
-  const [sigModal, setSigModal] = useState<{ section: string; itemId: string; itemLabel: string } | null>(null);
+  const markSectionComplete = trpc.training.markSectionComplete.useMutation({ onSuccess: () => refetch() });
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ phone_excellence: true });
+  // Local checkbox state: tracks which items are checked (but not yet signed off)
+  const [localChecked, setLocalChecked] = useState<Record<string, boolean>>({});
+  // Signature modal: triggered when all items in a section are checked
+  const [sigModal, setSigModal] = useState<{ sectionId: string; sectionTitle: string } | null>(null);
   const [sigValue, setSigValue] = useState("");
 
-  const completedIds = new Set(progress.map(p => p.itemId));
-  const totalItems = TRAINING_SECTIONS.reduce((acc, s) => acc + s.items.length, 0);
-  const completedCount = completedIds.size;
+  // Sections that are fully signed off (one row per section in DB)
+  const completedSectionIds = new Set(progress.map(p => p.itemId));
+  const totalSections = TRAINING_SECTIONS.length;
+  const completedCount = completedSectionIds.size;
 
-  const handleCheck = (section: string, itemId: string, itemLabel: string, checked: boolean) => {
-    if (!checked) return; // only allow checking, not unchecking
-    setSigModal({ section, itemId, itemLabel });
+  const handleCheck = (sectionId: string, itemId: string, checked: boolean) => {
+    // Don't allow unchecking items in a completed section
+    if (completedSectionIds.has(sectionId)) return;
+    setLocalChecked(prev => ({ ...prev, [itemId]: checked }));
+  };
+
+  // When all items in a section are checked, prompt for section signature
+  const handleSignSection = (sectionId: string, sectionTitle: string) => {
+    setSigModal({ sectionId, sectionTitle });
     setSigValue("");
   };
 
   const handleSignAndComplete = () => {
     if (!sigModal || sigValue.trim().length < 2) return;
-    markComplete.mutate({ ...sigModal, signature: sigValue.trim() });
+    markSectionComplete.mutate({ ...sigModal, signature: sigValue.trim() });
     setSigModal(null);
     setSigValue("");
   };
@@ -1403,28 +1413,34 @@ function PropertyMaxTrainingPage({ onBack }: { onBack: () => void }) {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: AC.heading, color: AC.fg }}>PropertyMAX Training</h1>
-        <p className="text-sm mb-2" style={{ color: AC.fgMuted }}>Check off each item as you complete it. Your signature and timestamp are recorded.</p>
+        <p className="text-sm mb-2" style={{ color: AC.fgMuted }}>Check off all items in each section, then sign once to complete it.</p>
         <div className="flex items-center gap-3 mb-6">
           <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: AC.bgRaised }}>
-            <div className="h-full rounded-full transition-all" style={{ width: `${(completedCount / totalItems) * 100}%`, backgroundColor: AC.teal }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${(completedCount / totalSections) * 100}%`, backgroundColor: AC.teal }} />
           </div>
-          <span className="text-xs font-medium" style={{ color: AC.tealDim }}>{completedCount}/{totalItems} completed</span>
+          <span className="text-xs font-medium" style={{ color: AC.tealDim }}>{completedCount}/{totalSections} sections completed</span>
         </div>
 
         {isLoading && <div className="text-center py-12" style={{ color: AC.fgMuted }}>Loading...</div>}
 
         <div className="flex flex-col gap-3">
           {TRAINING_SECTIONS.map(section => {
-            const sectionCompleted = section.items.filter(i => completedIds.has(i.id)).length;
+            const isSectionDone = completedSectionIds.has(section.id);
+            const sectionProg = progress.find(p => p.itemId === section.id);
+            const allItemsChecked = section.items.every(i => localChecked[i.id] || isSectionDone);
+            const checkedCount = section.items.filter(i => localChecked[i.id] || isSectionDone).length;
             const isOpen = openSections[section.id];
             return (
-              <div key={section.id} className="rounded-2xl border overflow-hidden" style={{ backgroundColor: AC.bgCard, borderColor: AC.border }}>
+              <div key={section.id} className="rounded-2xl border overflow-hidden" style={{ backgroundColor: AC.bgCard, borderColor: isSectionDone ? AC.teal : AC.border }}>
                 <button onClick={() => toggleSection(section.id)}
                   className="w-full flex items-center justify-between px-4 py-3 text-left hover:opacity-80 transition-opacity">
-                  <span className="font-semibold text-sm" style={{ color: AC.fg }}>{section.title}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: sectionCompleted === section.items.length ? AC.teal : AC.fgMuted }}>
-                      {sectionCompleted}/{section.items.length}
+                    {isSectionDone && <span style={{ color: AC.teal }}>✓</span>}
+                    <span className="font-semibold text-sm" style={{ color: isSectionDone ? AC.teal : AC.fg }}>{section.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: isSectionDone ? AC.teal : AC.fgMuted }}>
+                      {checkedCount}/{section.items.length}
                     </span>
                     <ChevronRight className="w-4 h-4 transition-transform" style={{ color: AC.fgMuted, transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }} />
                   </div>
@@ -1432,26 +1448,38 @@ function PropertyMaxTrainingPage({ onBack }: { onBack: () => void }) {
                 {isOpen && (
                   <div className="border-t" style={{ borderColor: AC.border }}>
                     {section.items.map(item => {
-                      const done = completedIds.has(item.id);
-                      const prog = progress.find(p => p.itemId === item.id);
+                      const itemChecked = localChecked[item.id] || isSectionDone;
                       return (
                         <div key={item.id} className="flex items-start gap-3 px-4 py-3 border-b last:border-b-0"
                           style={{ borderColor: AC.border }}>
-                          <input type="checkbox" checked={done} onChange={e => handleCheck(section.id, item.id, item.label, e.target.checked)}
-                            disabled={done}
+                          <input type="checkbox" checked={itemChecked}
+                            onChange={e => handleCheck(section.id, item.id, e.target.checked)}
+                            disabled={isSectionDone}
                             className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
                             style={{ accentColor: AC.teal }} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm" style={{ color: done ? AC.fgMuted : AC.fg, textDecoration: done ? "line-through" : "none" }}>{item.label}</p>
-                            {done && prog && (
-                              <p className="text-xs mt-0.5" style={{ color: AC.fgSubtle }}>
-                                ✓ {prog.signature} · {new Date(prog.completedAt).toLocaleString()}
-                              </p>
-                            )}
+                            <p className="text-sm" style={{ color: itemChecked ? AC.fgMuted : AC.fg, textDecoration: itemChecked ? "line-through" : "none" }}>{item.label}</p>
                           </div>
                         </div>
                       );
                     })}
+                    {/* Sign-off row — shown when all items are checked but section not yet signed */}
+                    {allItemsChecked && !isSectionDone && (
+                      <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: AC.bgRaised }}>
+                        <span className="text-xs font-medium" style={{ color: AC.fg }}>All items checked — sign off to complete this section</span>
+                        <button onClick={() => handleSignSection(section.id, section.title)}
+                          className="px-4 py-1.5 rounded-xl text-xs font-bold"
+                          style={{ backgroundColor: AC.teal, color: AC.bg }}>
+                          Sign Off
+                        </button>
+                      </div>
+                    )}
+                    {/* Completed signature record */}
+                    {isSectionDone && sectionProg && (
+                      <div className="px-4 py-3" style={{ backgroundColor: AC.bgRaised }}>
+                        <p className="text-xs" style={{ color: AC.teal }}>✓ Signed by {sectionProg.signature} on {new Date(sectionProg.completedAt).toLocaleString()}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1466,7 +1494,7 @@ function PropertyMaxTrainingPage({ onBack }: { onBack: () => void }) {
           <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: AC.bgCard, border: `1px solid ${AC.borderStrong}` }}>
             <h3 className="font-bold text-base mb-1" style={{ fontFamily: AC.heading, color: AC.fg }}>Sign Off</h3>
             <p className="text-xs mb-4" style={{ color: AC.fgMuted }}>Type your full name to confirm you completed:</p>
-            <p className="text-sm font-medium mb-4 p-3 rounded-xl" style={{ backgroundColor: AC.bgRaised, color: AC.fg }}>{sigModal.itemLabel}</p>
+            <p className="text-sm font-medium mb-4 p-3 rounded-xl" style={{ backgroundColor: AC.bgRaised, color: AC.fg }}>{sigModal.sectionTitle}</p>
             <input
               type="text"
               value={sigValue}
@@ -1484,10 +1512,10 @@ function PropertyMaxTrainingPage({ onBack }: { onBack: () => void }) {
                 Cancel
               </button>
               <button onClick={handleSignAndComplete}
-                disabled={sigValue.trim().length < 2 || markComplete.isPending}
+                disabled={sigValue.trim().length < 2 || markSectionComplete.isPending}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity disabled:opacity-40"
                 style={{ backgroundColor: AC.teal, color: AC.bg }}>
-                {markComplete.isPending ? "Saving..." : "Sign & Complete"}
+                {markSectionComplete.isPending ? "Saving..." : "Sign & Complete"}
               </button>
             </div>
           </div>

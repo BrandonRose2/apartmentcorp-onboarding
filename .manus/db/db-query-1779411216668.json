@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Add missing columns needed by the new schema\nALTER TABLE propertymax_training_progress \n  ADD COLUMN section varchar(128) NOT NULL DEFAULT '' AFTER newHireId,\n  ADD COLUMN itemLabel text NOT NULL AFTER itemId,\n  MODIFY COLUMN completedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  MODIFY COLUMN signature varchar(255) NOT NULL DEFAULT '';\n\n-- Drop the old boolean completed column (no longer needed)\nALTER TABLE propertymax_training_progress DROP COLUMN completed;\n\n-- Drop updatedAt (not in new schema)\nALTER TABLE propertymax_training_progress DROP COLUMN updatedAt;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute \n-- Add missing columns needed by the new schema\nALTER TABLE propertymax_training_progress \n  ADD COLUMN section varchar(128) NOT NULL DEFAULT '' AFTER newHireId,\n  ADD COLUMN itemLabel text NOT NULL AFTER itemId,\n  MODIFY COLUMN completedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  MODIFY COLUMN signature varchar(255) NOT NULL DEFAULT '';\n\n-- Drop the old boolean completed column (no longer needed)\nALTER TABLE propertymax_training_progress DROP COLUMN completed;\n\n-- Drop updatedAt (not in new schema)\nALTER TABLE propertymax_training_progress DROP COLUMN updatedAt;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1054
+}

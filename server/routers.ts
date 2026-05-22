@@ -398,12 +398,12 @@ export const appRouter = router({
         .where(eq(propertyMaxTrainingProgress.newHireId, hire.id));
     }),
 
-    // Mark a training item as complete with timestamp + signature
-    markComplete: publicProcedure
+    // Mark an entire section as complete with a single signature
+    // One row per section per new hire (itemId = sectionId)
+    markSectionComplete: publicProcedure
       .input(z.object({
-        section: z.string(),
-        itemId: z.string(),
-        itemLabel: z.string(),
+        sectionId: z.string(),
+        sectionTitle: z.string(),
         signature: z.string().min(2, "Signature required"),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -411,17 +411,17 @@ export const appRouter = router({
         if (!hire) throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        // Upsert: delete existing then insert fresh
+        // Upsert: one row per section per new hire
         await db.delete(propertyMaxTrainingProgress)
           .where(and(
             eq(propertyMaxTrainingProgress.newHireId, hire.id),
-            eq(propertyMaxTrainingProgress.itemId, input.itemId),
+            eq(propertyMaxTrainingProgress.itemId, input.sectionId),
           ));
         await db.insert(propertyMaxTrainingProgress).values({
           newHireId: hire.id,
-          section: input.section,
-          itemId: input.itemId,
-          itemLabel: input.itemLabel,
+          section: input.sectionId,
+          itemId: input.sectionId,
+          itemLabel: input.sectionTitle,
           completedAt: new Date(),
           signature: input.signature,
         });
