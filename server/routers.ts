@@ -27,7 +27,7 @@ import {
   upsertFormSubmission,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
-import { sendCompletionEmail, sendWelcomeEmail } from "./email";
+import { sendCompletionEmail, sendFirstLoginNotification, sendWelcomeEmail } from "./email";
 
 const NEW_HIRE_COOKIE = "nh_session";
 
@@ -147,10 +147,27 @@ export const appRouter = router({
         }
         if (!hire) return { success: false, error: "no_session" } as const;
         if (hire.passcode !== input.passcode) return { success: false, error: "wrong_passcode" } as const;
+        // First-login detection: fire notification if this is the first time they log in
+        const isFirstLogin = !hire.firstLoginAt;
+        if (isFirstLogin) {
+          const db2 = await getDb();
+          await db2.update(newHires).set({ firstLoginAt: new Date() }).where(eq(newHires.id, hire.id));
+          const building = hire.buildingId ? await getBuildingById(hire.buildingId) : null;
+          const hireName = hire.email.split("@")[0]?.replace(/\./g, " ") ?? hire.email;
+          const capitalizedName = hireName.split(" ").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+          sendFirstLoginNotification({
+            newHireName: capitalizedName,
+            newHireEmail: hire.email,
+            position: hire.position ?? "Not specified",
+            buildingName: building?.name ?? "Not assigned",
+            loginTime: new Date(),
+            adminDashboardUrl: "https://aptonboard-pxsj4nvm.manus.space",
+          }).catch((e: unknown) => console.error("[FirstLogin] Notification failed:", e));
+        }
         await updateNewHireLastLogin(hire.id);
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(NEW_HIRE_COOKIE, hire.email, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
-        return { success: true, email: hire.email, id: hire.id } as const;
+        return { success: true, email: hire.email, id: hire.id, isFirstLogin } as const;
       }),
 
     checkEmailExists: publicProcedure

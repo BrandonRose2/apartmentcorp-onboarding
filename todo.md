@@ -74,3 +74,7 @@
 - [x] Build HTML completion email template (per-division sections)
 - [x] Wire completion trigger in reviewSubmission procedure (fires when all chapters approved)
 - [x] Send email from brandon@apartmentcorp.com via Resend
+- [ ] Add firstLoginAt column to new_hires table
+- [ ] Add first-login notification email (to Ethan, CC Brandon; testing mode: Brandon only)
+- [ ] Wire first-login trigger in loginWithPasscode procedure
+- [ ] Send test notification for all current applicants (Brandon only)

@@ -345,3 +345,116 @@ export async function validateResendApiKey(): Promise<boolean> {
     return false;
   }
 }
+
+// ─── First Login Notification ─────────────────────────────────────────────────
+// Sent to Ethan (CC Brandon) when a new hire logs in for the first time.
+// TESTING_MODE = true: only sends to Brandon.
+const TESTING_MODE_FIRST_LOGIN = true;
+const ETHAN_EMAIL = "ethan@apartmentcorp.com";
+
+export async function sendFirstLoginNotification({
+  newHireName,
+  newHireEmail,
+  position,
+  buildingName,
+  loginTime,
+  adminDashboardUrl,
+}: {
+  newHireName: string;
+  newHireEmail: string;
+  position: string;
+  buildingName: string;
+  loginTime: Date;
+  adminDashboardUrl: string;
+}): Promise<boolean> {
+  const formattedTime = loginTime.toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+
+  const toEmail = TESTING_MODE_FIRST_LOGIN ? BRANDON_EMAIL : ETHAN_EMAIL;
+  const ccEmails = TESTING_MODE_FIRST_LOGIN ? [] : [BRANDON_EMAIL];
+  const testingBanner = TESTING_MODE_FIRST_LOGIN
+    ? `<div style="background:#fff3cd;border:1px solid #ffc107;padding:10px 16px;border-radius:6px;margin-bottom:20px;font-size:13px;color:#856404;">
+        <strong>Testing Mode:</strong> This email would normally go to Ethan Cowles (ethan@apartmentcorp.com) with Brandon CC'd. Currently routing to Brandon only.
+      </div>`
+    : "";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a3a5c 0%,#2d6a9f 100%);padding:32px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">ApartmentCorp Onboarding</h1>
+            <p style="margin:6px 0 0;color:#a8c8e8;font-size:14px;">New Hire First Login Alert</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px;">
+            ${testingBanner}
+            <p style="margin:0 0 20px;font-size:16px;color:#1a3a5c;font-weight:600;">A new hire has logged into the onboarding portal for the first time.</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:24px;">
+              <tr><td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">New Hire</span><br>
+                <span style="font-size:16px;color:#1e293b;font-weight:600;">${newHireName}</span>
+              </td></tr>
+              <tr><td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Email</span><br>
+                <span style="font-size:15px;color:#1e293b;">${newHireEmail}</span>
+              </td></tr>
+              <tr><td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Position</span><br>
+                <span style="font-size:15px;color:#1e293b;">${position}</span>
+              </td></tr>
+              <tr><td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Assigned Building</span><br>
+                <span style="font-size:15px;color:#1e293b;">${buildingName}</span>
+              </td></tr>
+              <tr><td style="padding:16px 20px;">
+                <span style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">First Login Time</span><br>
+                <span style="font-size:15px;color:#1e293b;">${formattedTime} (Pacific)</span>
+              </td></tr>
+            </table>
+            <div style="text-align:center;">
+              <a href="${adminDashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#1a3a5c,#2d6a9f);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">View in Admin Dashboard</a>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">ApartmentCorp Onboarding Portal &bull; 737 N Genesee Ave, Los Angeles, CA 90036</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const payload: Record<string, unknown> = {
+      from: `Welcome <${FROM_EMAIL}>`,
+      to: [toEmail],
+      subject: `New Hire First Login: ${newHireName}`,
+      html,
+      reply_to: REPLY_TO,
+    };
+    if (ccEmails.length > 0) payload.cc = ccEmails;
+
+    const { data, error } = await resend.emails.send(payload as Parameters<typeof resend.emails.send>[0]);
+    if (error) {
+      console.error("[FirstLoginEmail] Resend error:", error);
+      return false;
+    }
+    console.log("[FirstLoginEmail] Sent to", toEmail, "id:", data?.id, "for hire:", newHireEmail);
+    return true;
+  } catch (e) {
+    console.error("[FirstLoginEmail] Exception:", e);
+    return false;
+  }
+}

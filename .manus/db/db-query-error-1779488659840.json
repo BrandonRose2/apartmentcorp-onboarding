@@ -1,0 +1,8 @@
+{
+  "query": "SELECT nh.id, nh.email, nh.position, nh.building_id, b.name as building_name, nh.first_login_at FROM new_hires nh LEFT JOIN buildings b ON nh.buildingId = b.id ORDER BY nh.created_at DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT nh.id, nh.email, nh.position, nh.building_id, b.name as building_name, nh.first_login_at FROM new_hires nh LEFT JOIN buildings b ON nh.buildingId = b.id ORDER BY nh.created_at DESC;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'nh.created_at' in 'order clause'"
+  ]
+}
