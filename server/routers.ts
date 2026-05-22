@@ -329,6 +329,11 @@ export const appRouter = router({
           formStatus = "pending";
         }
 
+        // Credential provisioning stats
+        const creds = await getCredentialsByNewHire(h.id);
+        const requiredCreds = creds.filter(c => c.required);
+        const provisionedCreds = requiredCreds.filter(c => c.username && c.username.trim().length > 0);
+
         return {
           ...h,
           firstName,
@@ -339,6 +344,8 @@ export const appRouter = router({
           formsSubmittedCount: totalSubmitted,
           formsRequiredApprovedCount: requiredApproved.length,
           formsRequiredTotal: REQUIRED_FORM_TYPES.length,
+          credentialsRequired: requiredCreds.length,
+          credentialsProvisioned: provisionedCreds.length,
         };
       }));
 

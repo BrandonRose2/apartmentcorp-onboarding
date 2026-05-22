@@ -475,6 +475,39 @@ export function TechOnboardingTab() {
                       📍 {hire.building.name}
                     </div>
                   )}
+                  {/* Credential provisioning progress bar */}
+                  {(() => {
+                    const required = (hire as any).credentialsRequired as number ?? 0;
+                    const provisioned = (hire as any).credentialsProvisioned as number ?? 0;
+                    const pct = required > 0 ? Math.round((provisioned / required) * 100) : 0;
+                    const barColor = pct === 100
+                      ? "oklch(0.55 0.18 160)"
+                      : pct > 0
+                      ? "oklch(0.60 0.18 55)"
+                      : "oklch(0.45 0.10 258)";
+                    return (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs" style={{ color: "oklch(0.65 0.08 220)" }}>
+                            {pct === 100 ? "✅ " : ""}
+                            Credentials: {provisioned}/{required > 0 ? required : "—"}
+                          </span>
+                          <span className="text-xs font-semibold" style={{ color: barColor }}>
+                            {required > 0 ? `${pct}%` : "Not set"}
+                          </span>
+                        </div>
+                        {required > 0 && (
+                          <div className="h-1.5 rounded-full overflow-hidden"
+                            style={{ backgroundColor: "oklch(0.28 0.06 258)" }}>
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: barColor }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="mt-3 pt-3 border-t flex items-center justify-between"
                     style={{ borderColor: "oklch(0.28 0.06 258)" }}>
                     <span className="text-xs" style={{ color: "oklch(0.65 0.08 220)" }}>
