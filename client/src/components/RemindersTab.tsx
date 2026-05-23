@@ -99,6 +99,15 @@ const DEFAULT_REMINDERS: ReminderItem[] = [
     createdAt: Date.now() - 1 * 86400000,
   },
   {
+    id: "default-nicole-personality",
+    text: "Ask Nicole how to allocate the personality test link to new hire applicants",
+    note: "A personality test chapter has been added to the new hire onboarding portal (Chapter 6 — Personality Assessment). This chapter is shown to all employees EXCEPT Maintenance staff.\n\nThe chapter currently instructs new hires to check their email for a link from HR. Before this goes live, confirm with Nicole:\n\n1. Which personality test platform are we using? (e.g., 16Personalities, DiSC, Predictive Index, CliftonStrengths, etc.)\n2. How should the link be distributed — auto-emailed when the new hire reaches Chapter 6, or manually sent by HR?\n3. Should the results be stored in the portal, or just tracked externally?\n4. Any specific instructions for the new hire on how to complete it?\n\nOnce confirmed, the portal can be updated to include the actual test link or auto-send logic.",
+    done: false,
+    priority: "high",
+    assignee: "Both COOs",
+    createdAt: Date.now() + 2000,
+  },
+  {
     id: "default-6",
     text: "Add UC Connect or ConnectUP phone app/website into the Communication & Collaboration section of the Technology Onboarding form",
     note: "Research whether it is UC Connect or ConnectUP, confirm the correct login URL, and add it as a dedicated field in the Phone Portal or Communication section of Ethan's Technology Onboarding form. Also add to the Company Websites & Logins tab.",

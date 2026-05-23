@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, email, position, buildingId, onboardingStatus, createdAt FROM new_hires ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT id, email, position, buildingId, onboardingStatus, createdAt FROM new_hires ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "30001",
+      "email": "brandon@apartmentcorp.com",
+      "position": "admin_staff",
+      "buildingId": "9",
+      "onboardingStatus": "hr_approved",
+      "createdAt": "2026-05-20 21:19:31"
+    },
+    {
+      "id": "1",
+      "email": "robert@apartmentcorp.com",
+      "position": "admin_staff",
+      "buildingId": "7",
+      "onboardingStatus": "pending",
+      "createdAt": "2026-05-19 22:25:38"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tposition\tbuildingId\tonboardingStatus\tcreatedAt\n30001\tbrandon@apartmentcorp.com\tadmin_staff\t9\thr_approved\t2026-05-20 21:19:31\n1\trobert@apartmentcorp.com\tadmin_staff\t7\tpending\t2026-05-19 22:25:38\n",
+  "stderr": "",
+  "execution_time_ms": 274
+}

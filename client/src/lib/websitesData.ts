@@ -161,14 +161,14 @@ export const COMPANY_WEBSITES: CompanyWebsite[] = [
     url: "https://www.myloneworkers.com",
     icon: "🦺",
     category: "maintenance",
-    description: "Lone worker safety monitoring platform for maintenance staff working alone on-site. Provides check-in, SOS alerts, and location tracking.",
-    loginInstructions: "Your maintenance supervisor will create your MyLoneWorkers account. You will receive an invitation email. Download the mobile app before your first solo shift.",
+    description: "Property inspections management platform for creating, scheduling, and completing inspection reports across all ApartmentCorp properties.",
+    loginInstructions: "Your maintenance supervisor will create your MyLoneWorkers account. You will receive an invitation email. Use this platform to manage all property inspection reports.",
     fields: [
       { label: "Web URL", value: "https://app.myloneworkers.com" },
       { label: "Invitation", value: "Sent by your maintenance supervisor" },
       { label: "Mobile App", value: "MyLoneWorkers — available on iOS and Android" },
     ],
-    notes: "You must check in at the start of every solo maintenance shift and check out when complete. Failure to check in triggers a supervisor alert.",
+    notes: "Use MyLoneWorkers to create, schedule, and complete property inspection reports. All inspection records are stored here for compliance and maintenance tracking.",
     accessLevel: "Maintenance",
   },
   {

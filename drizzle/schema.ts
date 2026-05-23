@@ -36,7 +36,7 @@ export const newHires = mysqlTable("new_hires", {
   ]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   lastLogin: timestamp("lastLogin").defaultNow().notNull(),
-  firstLoginAt: timestamp("firstLoginAt"),
+  firstLoginAt: timestamp("first_login_at"),
   completionEmailSentAt: timestamp("completionEmailSentAt"),
   provisioningEmailSentAt: timestamp("provisioningEmailSentAt"),
 });
@@ -75,6 +75,7 @@ export const formSubmissions = mysqlTable("form_submissions", {
     "it2104",
     "i9",
     "maintenance_test",
+    "personality_test",
   ]).notNull(),
   formData: json("formData").notNull(), // stores all field values as JSON
   status: mysqlEnum("status", [

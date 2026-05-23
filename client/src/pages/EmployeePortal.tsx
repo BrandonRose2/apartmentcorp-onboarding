@@ -440,8 +440,21 @@ const CHAPTERS: Chapter[] = [
     forms: [],
   },
   {
-    id: "maintenance_test",
+    id: "personality_test",
     number: 6,
+    title: "Personality Assessment",
+    subtitle: "Help us understand how you work best",
+    icon: "🧠",
+    accentColor: "oklch(0.68 0.16 290)",
+    estimatedMinutes: 20,
+    description: "Complete a short personality assessment so we can better understand your working style, communication preferences, and how to set you up for success on the team.",
+    status: "locked",
+    formType: "personality_test",
+    forms: [],
+  },
+  {
+    id: "maintenance_test",
+    number: 7,
     title: "Maintenance Skills Test",
     subtitle: "Plumbing, electrical, HVAC & more",
     icon: "🔧",
@@ -468,6 +481,9 @@ function EmployeePortalContent() {
 
   const saveDraft = trpc.forms.saveDraft.useMutation();
   const submitForm = trpc.forms.submit.useMutation();
+  // Fetch session to get position (for chapter gating)
+  const { data: sessionData } = trpc.newHire.checkSession.useQuery();
+  const hirePosition = sessionData?.hire?.position ?? null;
   // Fetch all submitted forms — used to authoritatively rebuild chapter state on load
   const { data: myForms } = trpc.forms.getMyForms.useQuery(undefined, {
     refetchInterval: 30_000, // poll every 30s so approval unlocks are reflected without manual refresh
@@ -494,6 +510,8 @@ function EmployeePortalContent() {
   //   - submitted (pending review) → chapter is "submitted", next chapter stays locked
   //   - draft → chapter is "in-progress" (form was started but not submitted)
   //   - First chapter is always "available" once the new hire has entered their name
+  //   - personality_test is hidden for Maintenance positions
+  //   - maintenance_test is hidden for non-Maintenance positions
   useEffect(() => {
     if (!myForms) return;
     setChapters(() => {
@@ -501,8 +519,18 @@ function EmployeePortalContent() {
       const submittedTypes = new Set(myForms.filter(f => f.status === "submitted").map(f => f.formType));
       const draftTypes = new Set(myForms.filter(f => f.status === "draft").map(f => f.formType));
 
+      // Filter chapters based on position:
+      // - Maintenance: skip personality_test
+      // - All others: skip maintenance_test
+      const isMaintenance = hirePosition === "maintenance";
+      const filteredChapters = CHAPTERS.filter(c => {
+        if (c.formType === "personality_test" && isMaintenance) return false;
+        if (c.formType === "maintenance_test" && !isMaintenance) return false;
+        return true;
+      }).map((c, idx) => ({ ...c, number: idx + 1 }));
+
       let unlockNext = false;
-      return CHAPTERS.map((c, i) => {
+      return filteredChapters.map((c, i) => {
         // Chapter 0 is always available once the portal is open
         const isFirst = i === 0;
         if (!c.formType) {
@@ -531,7 +559,7 @@ function EmployeePortalContent() {
         return { ...c, status: "locked" as const };
       });
     });
-  }, [myForms]);
+  }, [myForms, hirePosition]);
 
   useEffect(() => {
     if (employeeName) {
@@ -545,7 +573,7 @@ function EmployeePortalContent() {
   }, [employeeName, startDate, formValues]);
 
   const completedChapters = chapters.filter(c => c.status === "complete" || c.status === "submitted").length;
-  const totalChapters = chapters.filter(c => c.formType !== null).length;
+  const totalChapters = chapters.filter(c => c.formType !== null).length; // personality_test/maintenance_test already filtered by position
   const overallProgress = totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
 
   const handleWelcomeSubmit = () => {
@@ -1004,19 +1032,47 @@ function FormScreen({ chapter, formValues, onFieldChange, onSaveDraft, onBack, o
       {chapter.forms.length === 0 ? (
         <div className="rounded-2xl p-10 text-center border"
           style={{ borderColor: AC.border, backgroundColor: AC.bgCard }}>
-          <div className="text-4xl mb-3">📄</div>
-          <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: AC.heading, color: AC.fg }}>
-            {chapter.id === "maintenance_test" ? "Maintenance Test — Coming Soon" : "Forms Coming Soon"}
-          </h3>
-          <p className="text-sm" style={{ color: AC.fgMuted }}>
-            {chapter.id === "maintenance_test"
-              ? "Your maintenance skills assessment will be available once your position is confirmed by HR."
-              : "The forms for this chapter are being prepared. HR will notify you when they're ready."}
-          </p>
-          <button onClick={onBack} className="mt-5 px-5 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97]"
-            style={{ backgroundColor: AC.teal, color: AC.bg }}>
-            ← Back to chapters
-          </button>
+          {chapter.id === "personality_test" ? (
+            <>
+              <div className="text-4xl mb-3">🧠</div>
+              <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: AC.heading, color: AC.fg }}>
+                Personality Assessment
+              </h3>
+              <p className="text-sm mb-5" style={{ color: AC.fgMuted }}>
+                You’ll be redirected to a short personality assessment. Once complete, return here and mark this chapter as done.
+              </p>
+              <div className="rounded-xl p-4 mb-5 text-left" style={{ backgroundColor: AC.bgRaised, border: `1px solid ${AC.borderStrong}` }}>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "oklch(0.68 0.16 290)" }}>Important</p>
+                <p className="text-sm" style={{ color: AC.fgMuted }}>The link to your personality test will be provided by HR. Please check your email or contact your manager if you have not received it yet.</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onClick={onBack} className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97]"
+                  style={{ backgroundColor: AC.bgRaised, color: AC.fgMuted }}>
+                  ← Back to chapters
+                </button>
+                <button onClick={() => onComplete({})} className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97]"
+                  style={{ backgroundColor: "oklch(0.68 0.16 290)", color: "white" }}>
+                  Mark as Complete
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl mb-3">📄</div>
+              <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: AC.heading, color: AC.fg }}>
+                {chapter.id === "maintenance_test" ? "Maintenance Test — Coming Soon" : "Forms Coming Soon"}
+              </h3>
+              <p className="text-sm" style={{ color: AC.fgMuted }}>
+                {chapter.id === "maintenance_test"
+                  ? "Your maintenance skills assessment will be available once your position is confirmed by HR."
+                  : "The forms for this chapter are being prepared. HR will notify you when they\u2019re ready."}
+              </p>
+              <button onClick={onBack} className="mt-5 px-5 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97]"
+                style={{ backgroundColor: AC.teal, color: AC.bg }}>
+                ← Back to chapters
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-6">

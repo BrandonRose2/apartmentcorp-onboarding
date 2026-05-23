@@ -78,3 +78,15 @@
 - [ ] Add first-login notification email (to Ethan, CC Brandon; testing mode: Brandon only)
 - [ ] Wire first-login trigger in loginWithPasscode procedure
 - [ ] Send test notification for all current applicants (Brandon only)
+- [ ] Add firstLoginAt column to new_hires table and push migration
+- [ ] Wire first-login notification email (Ethan + CC Brandon) in loginWithPasscode procedure
+- [ ] Build 3-hour stale onboarding heartbeat job: alert Brandon if any new hire in-progress > 3 hours
+- [ ] Build password-protected credential PDF generator (PIN as password) and email to new hire + Brandon on provisioning complete
+- [ ] Add bulk approve/reject action bar to Document Hub (approve or reject all pending forms for selected hire at once)
+- [ ] Rebuild full onboarding flow diagram HTML with all 5 sections, correct content, red-marked items removed
+- [x] Add personality test step to new hire portal (required for all roles except Maintenance)
+- [x] Add "Ask Nicole for personality test link" reminder to HR Admin dashboard (Reminders tab, default-nicole-personality)
+- [x] Build bookmarks.html generator server function with all platform URLs by category (server/bookmarksGenerator.ts)
+- [x] Build "Let's Get to Work" email with credentials table + bookmarks download link (sendCredentialDeliveryEmail in email.ts)
+- [x] Wire "Let's Get to Work" email to saveCredentials mutation in routers.ts (sendEmail: true flag)
+- [x] Keep onboarding flow diagram HTML (/home/ubuntu/onboarding-flow-diagram.html) always in sync with all portal changes (real-time updates)

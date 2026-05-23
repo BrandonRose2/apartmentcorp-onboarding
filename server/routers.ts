@@ -27,7 +27,8 @@ import {
   upsertFormSubmission,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
-import { sendCompletionEmail, sendFirstLoginNotification, sendWelcomeEmail } from "./email";
+import { sendCompletionEmail, sendCredentialDeliveryEmail, sendFirstLoginNotification, sendWelcomeEmail } from "./email";
+import { generateAndUploadBookmarks } from "./bookmarksGenerator";
 
 const NEW_HIRE_COOKIE = "nh_session";
 
@@ -575,9 +576,11 @@ export const appRouter = router({
       .query(async ({ input }) => getCredentialsByNewHire(input.newHireId)),
 
     // Save credentials for a new hire (admin sets required platforms + login info)
+    // When sendEmail=true, fires the "Let's Get to Work" credential delivery email to the new hire.
     saveCredentials: publicProcedure
       .input(z.object({
         newHireId: z.number(),
+        sendEmail: z.boolean().optional().default(false),
         credentials: z.array(z.object({
           platform: z.string(),
           required: z.boolean(),
@@ -597,6 +600,50 @@ export const appRouter = router({
             notes: cred.notes ?? null,
           });
         }
+
+        // Fire credential delivery email if requested and not already sent
+        if (input.sendEmail) {
+          const hire = await getNewHireById(input.newHireId);
+          if (hire && !hire.provisioningEmailSentAt) {
+            const hireName = hire.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+            // Generate browser bookmarks file
+            const bookmarksUrl = await generateAndUploadBookmarks(hire.email, hireName);
+
+            // Build credential list for email
+            const allCreds = await getCredentialsByNewHire(input.newHireId);
+            const emailCreds = allCreds
+              .filter(c => c.required)
+              .map(c => ({
+                platform: c.platform,
+                username: c.username ?? null,
+                password: c.password ?? null,
+                notes: c.notes ?? null,
+              }));
+
+            const portalUrl = "https://aptonboard-pxsj4nvm.manus.space";
+            const emailSent = await sendCredentialDeliveryEmail({
+              newHireName: hireName,
+              newHireEmail: hire.email,
+              portalUrl,
+              bookmarksUrl,
+              credentials: emailCreds,
+            });
+
+            // Only mark as sent if email was successfully delivered
+            if (emailSent) {
+              const db = await getDb();
+              if (db) {
+                await db.update(newHires)
+                  .set({ provisioningEmailSentAt: new Date() })
+                  .where(eq(newHires.id, input.newHireId));
+              }
+            } else {
+              console.error("[saveCredentials] Credential delivery email failed — provisioningEmailSentAt NOT set, admin can retry.");
+            }
+          }
+        }
+
         return { success: true };
       }),
   }),

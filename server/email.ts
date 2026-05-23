@@ -560,3 +560,237 @@ export async function sendProvisioningReadyEmail({
     return false;
   }
 }
+
+// ─── Stale Onboarding Alert ───────────────────────────────────────────────────
+// Sent to Brandon when any new hire has been in-progress > 3 hours without completing.
+export async function sendStaleOnboardingAlert(hires: Array<{
+  name: string;
+  email: string;
+  position: string;
+  buildingName: string;
+  hoursElapsed: number;
+  formsSubmitted: number;
+  formsApproved: number;
+}>): Promise<boolean> {
+  if (hires.length === 0) return true;
+
+  const rows = hires.map(h => `
+    <tr>
+      <td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#1e293b;">${h.name}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#475569;">${h.email}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#475569;">${h.position || "—"}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#475569;">${h.buildingName}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#dc2626;font-weight:600;">${h.hoursElapsed.toFixed(1)}h</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#475569;">${h.formsApproved}/${h.formsSubmitted}</td>
+    </tr>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#7f1d1d 0%,#dc2626 100%);padding:28px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">&#9888;&#65039; Onboarding Delay Alert</h1>
+            <p style="margin:6px 0 0;color:#fca5a5;font-size:13px;">ApartmentCorp New Hire Onboarding Portal</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px;">
+            <p style="margin:0 0 8px;font-size:15px;color:#1a3a5c;font-weight:600;">Hi Brandon,</p>
+            <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.6;">
+              The following ${hires.length === 1 ? "new hire has" : `${hires.length} new hires have`} been in the onboarding process for <strong>more than 3 hours</strong> without completing. Please review their status in the admin dashboard.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Name</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Email</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Position</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Building</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Elapsed</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Forms</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <div style="margin-top:28px;text-align:center;">
+              <a href="https://aptonboard-pxsj4nvm.manus.space/admin" style="display:inline-block;background:#1a3a5c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">Open Admin Dashboard</a>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 40px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">ApartmentCorp Onboarding Portal &middot; Automated Alert</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const result = await resend.emails.send({
+      from: `ApartmentCorp Onboarding <${FROM_EMAIL}>`,
+      to: [BRANDON_EMAIL],
+      subject: `\u26a0\ufe0f ${hires.length} New Hire${hires.length > 1 ? "s" : ""} Delayed \u2014 Onboarding > 3 Hours`,
+      html,
+    });
+    if (result.error) {
+      console.error("[StaleAlert] Resend error:", result.error);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[StaleAlert] Exception:", e);
+    return false;
+  }
+}
+
+// ─── "Let's Get to Work" — Credential Delivery Email ─────────────────────────
+// Sent to the new hire when Ethan completes IT credential provisioning.
+// Includes a download link for the browser bookmarks HTML file.
+const TESTING_MODE_CREDENTIALS = true;
+
+export interface CredentialDeliveryEmailData {
+  newHireName: string;
+  newHireEmail: string;
+  portalUrl: string;
+  bookmarksUrl: string | null;
+  credentials: Array<{
+    platform: string;
+    username: string | null;
+    password: string | null;
+    notes: string | null;
+  }>;
+}
+
+export async function sendCredentialDeliveryEmail(data: CredentialDeliveryEmailData): Promise<boolean> {
+  const { newHireName, newHireEmail, portalUrl, bookmarksUrl, credentials } = data;
+  const toEmail = TESTING_MODE_CREDENTIALS ? BRANDON_EMAIL : newHireEmail;
+  const testingBanner = TESTING_MODE_CREDENTIALS
+    ? `<div style="background:#fff3cd;border:1px solid #ffc107;padding:10px 16px;border-radius:6px;margin-bottom:20px;font-size:13px;color:#856404;">
+        <strong>Testing Mode:</strong> This email would normally go to the new hire (${newHireEmail}). Currently routing to Brandon only.
+      </div>`
+    : "";
+
+  const credRows = credentials
+    .filter(c => c.username || c.password)
+    .map(c => `
+      <tr>
+        <td style="padding:10px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:600;color:#1e293b;">${c.platform}</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#475569;">${c.username ?? "—"}</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#475569;font-family:monospace;">${c.password ?? "—"}</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#64748b;font-style:italic;">${c.notes ?? ""}</td>
+      </tr>`)
+    .join("");
+
+  const bookmarkSection = bookmarksUrl
+    ? `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:20px 24px;margin:24px 0;">
+        <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#0369a1;">🔖 Browser Bookmarks — Quick Setup</p>
+        <p style="margin:0 0 16px;font-size:13px;color:#0c4a6e;line-height:1.6;">
+          Download the ApartmentCorp bookmarks file and import it into Chrome or Edge to instantly have all company websites organized in your browser toolbar.
+        </p>
+        <ol style="margin:0 0 16px;padding-left:20px;font-size:13px;color:#0c4a6e;line-height:1.8;">
+          <li>Click the download link below to save the bookmarks file</li>
+          <li>In Chrome: open <strong>chrome://bookmarks</strong> → click the three-dot menu → <strong>Import bookmarks</strong></li>
+          <li>In Edge: open <strong>edge://favorites</strong> → click the three-dot menu → <strong>Import favorites</strong></li>
+          <li>Select the downloaded file — all ApartmentCorp links will appear instantly</li>
+        </ol>
+        <div style="text-align:center;">
+          <a href="${bookmarksUrl}" style="display:inline-block;background:#0369a1;color:#ffffff;text-decoration:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:600;">
+            ⬇ Download Bookmarks File
+          </a>
+        </div>
+      </div>`
+    : "";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 0;">
+    <tr><td align="center">
+      <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a3a5c 0%,#2d6a9f 100%);padding:36px 40px;text-align:center;">
+            <h1 style="margin:0 0 6px;color:#ffffff;font-size:26px;font-weight:700;">Let's Get to Work! 🚀</h1>
+            <p style="margin:0;color:#a8c8e8;font-size:15px;">Your ApartmentCorp system access is ready</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px;">
+            ${testingBanner}
+            <p style="margin:0 0 8px;font-size:16px;color:#1a3a5c;font-weight:600;">Hi ${newHireName},</p>
+            <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.7;">
+              Your IT credentials have been set up and you're all ready to go. Below are your login details for each platform you'll be using. Keep this email in a safe place — these are your personal credentials.
+            </p>
+
+            <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:0.5px;">Your Platform Credentials</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:8px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Platform</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Username / Email</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Password</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Notes</th>
+                </tr>
+              </thead>
+              <tbody>${credRows || '<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">Credentials will be provided by your manager.</td></tr>'}</tbody>
+            </table>
+            <p style="margin:0 0 24px;font-size:12px;color:#94a3b8;font-style:italic;">
+              ⚠ Keep these credentials confidential. Do not share them with anyone.
+            </p>
+
+            ${bookmarkSection}
+
+            <div style="background:#f8fafc;border-radius:8px;padding:20px 24px;margin:24px 0;">
+              <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a3a5c;">🖥 Access Your Onboarding Portal</p>
+              <p style="margin:0 0 16px;font-size:13px;color:#475569;line-height:1.6;">
+                Your onboarding portal has your full credentials list, training materials, and company resources — all in one place.
+              </p>
+              <div style="text-align:center;">
+                <a href="${portalUrl}" style="display:inline-block;background:linear-gradient(135deg,#1a3a5c,#2d6a9f);color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
+                  Open Onboarding Portal
+                </a>
+              </div>
+            </div>
+
+            <p style="margin:24px 0 0;font-size:14px;color:#475569;line-height:1.7;">
+              Welcome to the team — we're excited to have you! If you have any questions about your access or need help getting set up, reach out to your manager or email <a href="mailto:brandon@apartmentcorp.com" style="color:#2d6a9f;">brandon@apartmentcorp.com</a>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">ApartmentCorp Onboarding Portal &bull; 737 N Genesee Ave, Los Angeles, CA 90036</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `ApartmentCorp IT <${FROM_EMAIL}>`,
+      to: [toEmail],
+      subject: `Let's Get to Work! Your ApartmentCorp credentials are ready 🚀`,
+      html,
+      reply_to: REPLY_TO,
+    } as Parameters<typeof resend.emails.send>[0]);
+    if (error) {
+      console.error("[CredentialEmail] Resend error:", error);
+      return false;
+    }
+    console.log("[CredentialEmail] Sent to", toEmail, "id:", data?.id, "for hire:", newHireEmail);
+    return true;
+  } catch (e) {
+    console.error("[CredentialEmail] Exception:", e);
+    return false;
+  }
+}

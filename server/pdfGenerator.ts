@@ -19,6 +19,7 @@ export const FORM_DISPLAY_NAMES: Record<string, string> = {
   it2104: "IT-2104 — NY State Withholding Certificate",
   i9: "I-9 — Employment Eligibility Verification",
   maintenance_test: "Maintenance Skills Assessment",
+  personality_test: "Personality Assessment",
 };
 
 // Field labels that should be masked in the PDF (shown as *** for privacy)

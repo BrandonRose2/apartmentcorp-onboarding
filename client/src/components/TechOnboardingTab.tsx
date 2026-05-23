@@ -13,7 +13,7 @@ import {
   Monitor, User, ChevronLeft, Save, CheckCircle2,
   Eye, EyeOff, Copy, Wrench, Users, Phone,
   BarChart3, DollarSign, Laptop, Building2, Cpu,
-  AlertCircle, Loader2, Plus, Lock
+  AlertCircle, Loader2, Plus, Lock, Mail, Send
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -384,7 +384,7 @@ export function TechOnboardingTab() {
     setDirty(true);
   };
 
-  const handleSave = () => {
+  const handleSave = (sendEmail = false) => {
     if (!selectedHireId) return;
     const credentials = PLATFORMS.map((p) => ({
       platform: p.id,
@@ -393,7 +393,13 @@ export function TechOnboardingTab() {
       password: creds[p.id]?.password || null,
       notes: creds[p.id]?.notes || null,
     }));
-    saveMutation.mutate({ newHireId: selectedHireId, credentials });
+    saveMutation.mutate({ newHireId: selectedHireId, credentials, sendEmail });
+  };
+
+  const handleSaveAndSendEmail = () => {
+    if (!selectedHireId) return;
+    if (!window.confirm(`Send the "Let's Get to Work" credential email to ${selectedHire?.email}? This will also save all credentials.`)) return;
+    handleSave(true);
   };
 
   const filledCount = PLATFORMS.filter((p) => creds[p.id]?.username?.trim()).length;
@@ -602,9 +608,22 @@ export function TechOnboardingTab() {
           ))}
 
           {/* Bottom save */}
-          <div className="flex justify-end pt-2 pb-6">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2 pb-6">
             <Button
-              onClick={handleSave}
+              onClick={handleSaveAndSendEmail}
+              disabled={saveMutation.isPending}
+              size="lg"
+              className="flex items-center gap-2"
+              style={{
+                backgroundColor: "oklch(0.50 0.18 260)",
+                color: "oklch(0.97 0.01 220)",
+              }}
+            >
+              {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Save & Send "Let's Get to Work" Email
+            </Button>
+            <Button
+              onClick={() => handleSave(false)}
               disabled={saveMutation.isPending || !dirty}
               size="lg"
               className="flex items-center gap-2"
