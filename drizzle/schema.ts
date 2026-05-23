@@ -27,12 +27,19 @@ export const newHires = mysqlTable("new_hires", {
   buildingId: int("buildingId"),
   position: mysqlEnum("position", ["leasing", "maintenance", "management", "admin_staff", "other"]),
   onboardingStatus: mysqlEnum("onboardingStatus", [
-    "pending",          // registered, no forms submitted yet
-    "in_progress",      // some forms submitted
-    "submitted",        // all required forms submitted, awaiting manager review
-    "manager_approved", // regional manager approved
-    "hr_approved",      // HR/upper management final approval — fully onboarded
-    "rejected",         // rejected at some stage
+    "pending",           // registered, no forms submitted yet
+    "in_progress",       // some forms submitted
+    "submitted",         // all required forms submitted, awaiting review
+    "brandon_approved",  // Brandon approved
+    "robert_approved",   // Robert approved
+    "ethan_approved",    // Ethan approved
+    "nicole_approved",   // Nicole approved
+    "marc_approved",     // Marc approved (fully onboarded)
+    "manager_approved",  // legacy alias
+    "hr_approved",       // legacy alias — fully onboarded
+    "rejected",          // rejected at some stage
+    "manager_rejected",  // rejected by manager
+    "hr_rejected",       // rejected by HR
   ]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   lastLogin: timestamp("lastLogin").defaultNow().notNull(),

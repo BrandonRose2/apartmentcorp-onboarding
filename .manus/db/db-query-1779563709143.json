@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, email, passcode, onboardingStatus FROM new_hires WHERE email = 'leslielrolon@gmail.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT id, email, passcode, onboardingStatus FROM new_hires WHERE email = 'leslielrolon@gmail.com';",
+  "rows": [
+    {
+      "id": "90001",
+      "email": "leslielrolon@gmail.com",
+      "passcode": "2468",
+      "onboardingStatus": "pending"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tpasscode\tonboardingStatus\n90001\tleslielrolon@gmail.com\t2468\tpending\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, email, passcode, onboardingStatus, createdAt FROM new_hires WHERE email IN ('leslie@apartmentcorp.com', 'leslielrolon@gmail.com');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SELECT id, email, passcode, onboardingStatus, createdAt FROM new_hires WHERE email IN ('leslie@apartmentcorp.com', 'leslielrolon@gmail.com');",
+  "rows": [
+    {
+      "id": "60001",
+      "email": "leslie@apartmentcorp.com",
+      "passcode": "2468",
+      "onboardingStatus": "pending",
+      "createdAt": "2026-05-23 18:49:17"
+    },
+    {
+      "id": "90001",
+      "email": "leslielrolon@gmail.com",
+      "passcode": "2468",
+      "onboardingStatus": "pending",
+      "createdAt": "2026-05-23 19:08:24"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tpasscode\tonboardingStatus\tcreatedAt\n60001\tleslie@apartmentcorp.com\t2468\tpending\t2026-05-23 18:49:17\n90001\tleslielrolon@gmail.com\t2468\tpending\t2026-05-23 19:08:24\n",
+  "stderr": "",
+  "execution_time_ms": 364
+}
