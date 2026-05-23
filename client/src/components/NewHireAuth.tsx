@@ -49,16 +49,18 @@ export function NewHireAuth({ children }: Props) {
 
   useEffect(() => {
     if (isLoading) return;
+    // Never let the session query override a step we've already set via login/register
+    // Only run this effect on the initial "checking" state
+    if (step !== "checking") return;
     if (session?.registered) {
       // Cookie session found — go straight to passcode numpad
       setRegisteredEmail(session.email);
       setStep("login");
     } else {
       // No cookie — show email entry first (new device or cleared cookies)
-      // The user can choose to register or log back in
       setStep("register");
     }
-  }, [session, isLoading]);
+  }, [session, isLoading, step]);
 
   // ── Registration flow ──────────────────────────────────────────────────────
 
