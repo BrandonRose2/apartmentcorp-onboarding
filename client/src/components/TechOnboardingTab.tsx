@@ -8,7 +8,7 @@
  *   4. New hire's Company Websites & Logins tab auto-shows those credentials
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Monitor, User, ChevronLeft, Save, CheckCircle2,
   Eye, EyeOff, Copy, Wrench, Users, Phone,
@@ -334,34 +334,37 @@ export function TechOnboardingTab() {
 
   // Fetch existing credentials for selected hire
   const { data: existingCreds, isLoading: loadingCreds } = trpc.admin.getCredentials.useQuery(
-    { newHireId: selectedHireId! },
-    {
-      enabled: selectedHireId !== null,
-      onSuccess: (data) => {
-        // Pre-populate form with saved credentials
-        const map: Record<string, { username: string; password: string; notes: string; required: boolean }> = {};
-        for (const c of data) {
-          map[c.platform] = {
-            username: c.username ?? "",
-            password: c.password ?? "",
-            notes: c.notes ?? "",
-            required: c.required,
-          };
-        }
-        setCreds(map);
-        setDirty(false);
-      },
-    }
+    { newHireId: selectedHireId ?? 0 },
+    { enabled: selectedHireId !== null && selectedHireId !== undefined }
   );
+
+  // Populate form when credentials load (React Query v5 — onSuccess removed from useQuery)
+  useEffect(() => {
+    if (!existingCreds) return;
+    const map: Record<string, { username: string; password: string; notes: string; required: boolean }> = {};
+    for (const c of existingCreds) {
+      map[c.platform] = {
+        username: c.username ?? "",
+        password: c.password ?? "",
+        notes: c.notes ?? "",
+        required: c.required,
+      };
+    }
+    setCreds(map);
+    setDirty(false);
+  }, [existingCreds]);
 
   // Save credentials mutation
   const saveMutation = trpc.admin.saveCredentials.useMutation({
     onSuccess: () => {
       toast.success("✅ Credentials saved — new hire's portal updated!");
       setDirty(false);
-      utils.admin.getCredentials.invalidate({ newHireId: selectedHireId! });
+      if (selectedHireId) utils.admin.getCredentials.invalidate({ newHireId: selectedHireId });
     },
-    onError: () => toast.error("Failed to save credentials. Please try again."),
+    onError: (err) => {
+      console.error("[saveCredentials error]", err);
+      toast.error("Failed to save credentials. Please try again.");
+    },
   });
 
   const selectedHire = hires?.find((h) => h.id === selectedHireId);

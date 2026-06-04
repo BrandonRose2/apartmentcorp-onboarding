@@ -1,0 +1,13 @@
+{
+  "query": "SHOW TABLES LIKE 'new_hire_credentials';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user bdicYjYUtmqFELE.b436cd3cef6a --database PxSj4NVMpo7Dbkx2svgNws --execute SHOW TABLES LIKE 'new_hire_credentials';",
+  "rows": [
+    {
+      "Tables_in_PxSj4NVMpo7Dbkx2svgNws (new_hire_credentials)": "new_hire_credentials"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_PxSj4NVMpo7Dbkx2svgNws (new_hire_credentials)\nnew_hire_credentials\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}
