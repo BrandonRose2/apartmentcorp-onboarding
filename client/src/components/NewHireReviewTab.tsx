@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { Users, Building2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, FileText, Eye, X } from "lucide-react";
 
 type Position = "leasing" | "maintenance" | "management" | "admin_staff" | "other";
-type OnboardingStatus = "pending" | "in_progress" | "submitted" | "manager_approved" | "hr_approved" | "rejected";
+type OnboardingStatus = "pending" | "in_progress" | "submitted" | "brandon_approved" | "robert_approved" | "ethan_approved" | "nicole_approved" | "marc_approved" | "manager_approved" | "hr_approved" | "rejected" | "manager_rejected" | "hr_rejected";
 
 const POSITION_LABELS: Record<Position, string> = {
   leasing: "Leasing Agent",
@@ -22,9 +22,16 @@ const STATUS_CONFIG: Record<OnboardingStatus, { label: string; color: string; ic
   pending: { label: "Pending", color: "oklch(0.65 0.05 250)", icon: <Clock className="w-3 h-3" /> },
   in_progress: { label: "In Progress", color: "oklch(0.72 0.12 220)", icon: <AlertCircle className="w-3 h-3" /> },
   submitted: { label: "Submitted", color: "oklch(0.72 0.15 200)", icon: <FileText className="w-3 h-3" /> },
+  brandon_approved: { label: "Brandon Approved", color: "oklch(0.65 0.18 145)", icon: <CheckCircle2 className="w-3 h-3" /> },
+  robert_approved: { label: "Robert Approved", color: "oklch(0.65 0.18 145)", icon: <CheckCircle2 className="w-3 h-3" /> },
+  ethan_approved: { label: "Ethan Approved", color: "oklch(0.65 0.18 145)", icon: <CheckCircle2 className="w-3 h-3" /> },
+  nicole_approved: { label: "Nicole Approved", color: "oklch(0.65 0.18 145)", icon: <CheckCircle2 className="w-3 h-3" /> },
+  marc_approved: { label: "Fully Onboarded", color: "oklch(0.55 0.20 145)", icon: <CheckCircle2 className="w-3 h-3" /> },
   manager_approved: { label: "Manager Approved", color: "oklch(0.65 0.18 145)", icon: <CheckCircle2 className="w-3 h-3" /> },
   hr_approved: { label: "Fully Onboarded", color: "oklch(0.55 0.20 145)", icon: <CheckCircle2 className="w-3 h-3" /> },
   rejected: { label: "Rejected", color: "oklch(0.60 0.20 25)", icon: <XCircle className="w-3 h-3" /> },
+  manager_rejected: { label: "Rejected by Manager", color: "oklch(0.60 0.20 25)", icon: <XCircle className="w-3 h-3" /> },
+  hr_rejected: { label: "Rejected by HR", color: "oklch(0.60 0.20 25)", icon: <XCircle className="w-3 h-3" /> },
 };
 
 const FORM_TYPE_LABELS: Record<string, string> = {
