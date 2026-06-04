@@ -42,6 +42,35 @@ const FORM_TYPE_LABELS: Record<string, string> = {
 
 type SubmissionStatus = "submitted" | "hr_approved" | "hr_rejected" | "pending" | string;
 
+// Inline status badge for hire list
+function HireStatusBadge({ hire, compact }: { hire: { onboardingStatus?: string }; compact?: boolean }) {
+  const status = hire.onboardingStatus ?? "pending";
+  const cfg: Record<string, { label: string; color: string }> = {
+    pending: { label: "Pending", color: "oklch(0.65 0.05 250)" },
+    in_progress: { label: "In Progress", color: "oklch(0.72 0.12 220)" },
+    submitted: { label: "Submitted", color: "oklch(0.72 0.15 200)" },
+    brandon_approved: { label: "Approved", color: "oklch(0.65 0.18 145)" },
+    robert_approved: { label: "Approved", color: "oklch(0.65 0.18 145)" },
+    ethan_approved: { label: "Approved", color: "oklch(0.65 0.18 145)" },
+    nicole_approved: { label: "Approved", color: "oklch(0.65 0.18 145)" },
+    marc_approved: { label: "Onboarded", color: "oklch(0.55 0.20 145)" },
+    manager_approved: { label: "Approved", color: "oklch(0.65 0.18 145)" },
+    hr_approved: { label: "Onboarded", color: "oklch(0.55 0.20 145)" },
+    rejected: { label: "Rejected", color: "oklch(0.60 0.20 25)" },
+    manager_rejected: { label: "Rejected", color: "oklch(0.60 0.20 25)" },
+    hr_rejected: { label: "Rejected", color: "oklch(0.60 0.20 25)" },
+  };
+  const { label, color } = cfg[status] ?? { label: status, color: "oklch(0.65 0.05 250)" };
+  return (
+    <span
+      className="text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
+      style={{ backgroundColor: `${color}22`, color, border: `1px solid ${color}55` }}
+    >
+      {label}
+    </span>
+  );
+}
+
 interface SubmittedForm {
   id: number;
   formType: string;
